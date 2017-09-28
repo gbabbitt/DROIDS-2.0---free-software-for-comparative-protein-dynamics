@@ -79,7 +79,7 @@ my $repFrame = $mw->Frame(	-label => "PROTEIN REPRESENTATION",
 
 
 # Color Type Frame
-my $seqFrame = $mw->Frame(	-label => "COLOR SCHEME",
+my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
 				-relief => "groove",
 				-borderwidth => 2
 				);
@@ -178,7 +178,7 @@ my $mtcFrame = $mw->Frame(	-label => "MULTIPLE TEST CORRECTION",
 						);
 
 # color scale Frame
-my $scaleFrame = $mw->Frame(	-label => "COLOR SCALE for\n delta(flux/corr)\n",
+my $scaleFrame = $mw->Frame(	-label => "SCALE RANGE for\n delta(flux/corr)\n",
 				-relief => "groove",
 				-borderwidth => 2
 				);
@@ -197,6 +197,29 @@ my $scaleFrame = $mw->Frame(	-label => "COLOR SCALE for\n delta(flux/corr)\n",
     my $fixed05Radio = $scaleFrame->Radiobutton( -text => "fixed scale (-0.5 to 0.5 angstrom)",
 						-value=>"fixed05",
 						-variable=>\$scaleType
+						);
+
+
+# mutation color Frame
+my $mutFrame = $mw->Frame(	-label => "COLOR - NONHOMOLOGOUS REGIONS & MUTATIONS)",
+				-relief => "groove",
+				-borderwidth => 2
+				);
+	my $yellowRadio = $mutFrame->Radiobutton( -text => "yellow - (strict homology - small distance)",
+						-value=>"yellow",
+						-variable=>\$mutType
+						);
+    my $redRadio = $mutFrame->Radiobutton( -text => "red -(strict homology - small distance)",
+						-value=>"red",
+						-variable=>\$mutType
+						);
+	my $tanRadio = $mutFrame->Radiobutton( -text => "tan - (loose homology - large distance)",
+						-value=>"tan",
+						-variable=>\$mutType
+						);
+    my $grayRadio = $mutFrame->Radiobutton( -text => "dark gray - (loose homology - large distancet)",
+						-value=>"gray50",
+						-variable=>\$mutType
 						);
 
 
@@ -338,6 +361,11 @@ $fixed1Radio->pack();
 $fixed05Radio->pack();
 $absoluteRadio->pack();
 $relativeRadio->pack();
+$yellowRadio->pack();
+$redRadio->pack();
+$tanRadio->pack();
+$grayRadio->pack();
+
 
 $seqFrame->pack(-side=>"left",
 		-anchor=>"n"
@@ -348,7 +376,9 @@ $attrFrame->pack(-side=>"left",
 $scaleFrame->pack(-side=>"left",
 		-anchor=>"n"
 		);
-
+$mutFrame->pack(-side=>"left",
+		-anchor=>"n"
+		);
 
 MainLoop; # Allows Window to Pop Up
 
@@ -507,7 +537,7 @@ close STAT1;
 open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
-for (my $r = 1; $r <= $AA_count; $r++){
+for (my $r = 0; $r <= $AA_count; $r++){
    # collect AA info
     open(INFO, "<"."atomfluxscaled/DROIDSfluctuation_$r.txt") or next;
     my @INFO = <INFO>;
@@ -589,7 +619,7 @@ close STAT1;
 open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
-for (my $r = 1; $r <= $AA_count; $r++){
+for (my $r = 0; $r <= $AA_count; $r++){
    # collect AA info
     open(INFO, "<"."atomflux/DROIDSfluctuation_$r.txt") or next;
     my @INFO = <INFO>;
@@ -671,7 +701,7 @@ close STAT1;
 open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
-for (my $r = 1; $r <= $AA_count; $r++){
+for (my $r = 0; $r <= $AA_count; $r++){
    # collect AA info
     open(INFO, "<"."atomcorr/DROIDScorrelation_$r.txt") or next;
     my @INFO = <INFO>;
@@ -915,7 +945,10 @@ print("Rendering 6 movies on XYZ axes...\n");
 print("this may take several minutes...\n\n");
 print("close Chimera window when 6 movie files appear in movies folder\n\n");
 #print("/opt/UCSF/Chimera64-1.11/bin/chimera --script \"render_movies.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");
-system("$chimera_path"."chimera --script \"render_movies.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");
+if ($mutType eq "tan"){system("$chimera_path"."chimera --script \"render_movies_tan.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "gray50"){system("$chimera_path"."chimera --script \"render_movies_gray.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "red"){system("$chimera_path"."chimera --script \"render_movies_red.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "yellow"){system("$chimera_path"."chimera --script \"render_movies_yellow.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
 print("\n\n Movies rendered\n");
 }
 
@@ -925,7 +958,10 @@ sub display{
 print("Preparing static display...\n");
 print("close Chimera window to exit\n\n");
 print("ignore MD movie window unless you want to make a custom movie\n\n");
-system("$chimera_path"."chimera --script \"color_by_attr.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");;	
+if ($mutType eq "tan"){system("$chimera_path"."chimera --script \"color_by_attr_tan.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "gray50"){system("$chimera_path"."chimera --script \"color_by_attr_gray.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "red"){system("$chimera_path"."chimera --script \"color_by_attr_red.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
+if ($mutType eq "yellow"){system("$chimera_path"."chimera --script \"color_by_attr_yellow.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
 print("\n\n Display complete\n\n");
 
 }

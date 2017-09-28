@@ -484,7 +484,7 @@ my @IN4 = <IN4>;
 									if($atomnumberR == $Rtest_atom){$flux_ref = $IN6row[1];}
 							  }
 							
-					    if($resnumberR =~/\d/ && $reslabelQ ne "xxx"){
+					    if($resnumberR =~/\d/ && $flux_query=~/\d/ && $reslabelQ ne "xxx"){
 							    #print "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$flux_ref\t"."$flux_query\n";
 							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$flux_ref\t"."$flux_query\n";
 							    }
@@ -835,7 +835,7 @@ my @IN4 = <IN4>;
 									if($atomnumberR == $Rtest_atom){$corr_ref = $IN6row[2];}
 							  }
 							
-					    if($resnumberR =~/\d/ && $reslabelQ ne "xxx"){
+					    if($resnumberR =~/\d/ && $corr_query=~/\d/ && $reslabelQ ne "xxx"){
 							    #print "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."$corr_query\n";
 							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."$corr_query\n";
 							    }

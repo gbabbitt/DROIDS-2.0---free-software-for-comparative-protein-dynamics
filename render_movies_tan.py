@@ -107,6 +107,11 @@ rep_key = ""
 if not os.path.exists(out_folder):
     os.makedirs(out_folder)
 
+#########################################################################
+####  make 6 fixed point of view movies and 2 rolling movies   ##########
+#########################################################################
+
+# open and setup pdb file
 mol = chimera.openModels.open(pdb_file)[0] # Opens molecule
 rc("open md:%s.meta" % (rID))
 # Run Preliminary Chimera Commands
@@ -119,7 +124,6 @@ rc("scale 0.4")
 rc("~ribbon")
 rc("~surface")
 rc("background solid black")
-
 if rep == "surface":
  rc("surface #%s" % (model))
  rep_key = "s"
@@ -132,79 +136,146 @@ if rep == "ribbonsurface":
  rc("surftransparency 50 #%s" % (model))
  rep_key = "r,s"
 rc("defattr %s raiseTool false" % (attr_file))
-
 col_string = "%s %s %s %s %s %s novalue tan" % (max_value, max_color, mid_value, mid_color, min_value, min_color)
-
 rc("colorkey  .08,.1  .10,.800  %s" % (col_string))
-
 rc("rangecolor %s,%s %s #%s" % (attr, rep_key, col_string, model)) 
 rc("rangecolor %s,a %s #%s" % (attr, col_string, model))
 
-# Record movies
+###########################################
+# set position and initial scale for movie Z1 fixed
+rc("scale 0.2")
+# Record movie
 i = 0
 out_file = "%s/%s_%s_%s_%s_%s_viewZ1_%i" % (out_folder, rID, qID, rep, attr, metric, i)
-
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-i = 1
+##########################################
+# set position and initial scale for movie Z2 fixed
+rc("scale 0.2")
 rc("turn y 180")
+# Record movie 2
+i = 1
 out_file = "%s/%s_%s_%s_%s_%s_viewZ2_%i" % (out_folder, rID, qID, rep, attr, metric, i)
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-i = 2
+##############################################
+# set position and initial scale for movie X2 fixed
+rc("scale 0.2")
 rc("turn y 90")
+# Record movie 3
+i = 2
 out_file = "%s/%s_%s_%s_%s_%s_viewX2_%i" % (out_folder, rID, qID, rep, attr, metric, i)
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-i = 3
+##############################################
+# set position and initial scale for movie X1 fixed
+rc("scale 0.2")
 rc("turn y 180")
+# Record movie 4
+i = 3
 out_file = "%s/%s_%s_%s_%s_%s_viewX1_%i" % (out_folder, rID, qID, rep, attr, metric, i)
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-i = 4
+##############################################
+# set position and initial scale for movie Y1 fixed
+rc("scale 0.2")
 rc("turn x 90")
+# Record movie 5
+i = 4
 out_file = "%s/%s_%s_%s_%s_%s_viewY1_%i" % (out_folder, rID, qID, rep, attr, metric, i)
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-i = 5
+##############################################
+# set position and initial scale for movie Y2 fixed
+rc("scale 0.2")
 rc("turn y 180")
+# Record movie 6
+i = 5
 out_file = "%s/%s_%s_%s_%s_%s_viewY2_%i" % (out_folder, rID, qID, rep, attr, metric, i)
 rc("movie record")
 rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
 rc("wait %s" % (frame_count))
 rc("movie stop")
 rc("movie status")
 rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
+rc("scale 0.7")
 
-#rc("stop")
+##############################################
+# set position and initial scale for movie R1 fixed
+rc("roll")
+rc("scale 0.2")
+rc("turn x 90")
+# Record movie 7
+i = 6
+out_file = "%s/%s_%s_%s_%s_%s_viewR1_%i" % (out_folder, rID, qID, rep, attr, metric, i)
+rc("movie record")
+rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
+rc("wait %s" % (frame_count))
+rc("movie stop")
+rc("movie status")
+rc("movie encode %s.mp4 wait true" % (out_file))
+rc("wait")
+rc("scale 0.7")
+
+##############################################
+# set position and initial scale for movie R2 fixed
+rc("scale 0.2")
+rc("turn x 90")
+# Record movie 8
+i = 7
+out_file = "%s/%s_%s_%s_%s_%s_viewR2_%i" % (out_folder, rID, qID, rep, attr, metric, i)
+rc("movie record")
+rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
+rc("wait %s" % (frame_count))
+rc("movie stop")
+rc("movie status")
+rc("movie encode %s.mp4 wait true" % (out_file))
+rc("wait")
+rc("scale 0.7")
+
+###############################################
+rc("stop")

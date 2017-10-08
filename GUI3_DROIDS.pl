@@ -969,13 +969,11 @@ print("\n\n Display complete\n\n");
 ############################################################################################################
 sub play{
 print("Preparing movie display...\n");
-print("close DROIDS movie window to exit\n\n");
+print("close DROIDS movie windows to exit\n\n");
 my @movies;
-my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2');
-for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2');
+for (my $i = 0; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 my $movieStr = join(" ", @movies);
-#print("python DROIDS_gstreamer_Updated.py @movies");
-system("python DROIDS_gstreamer_Updated.py @movies");
-print("\n\n DROIDS closed\n\n");
+system("python DROIDS_gstreamer.py @movies");
 }
 #############################################################################################################

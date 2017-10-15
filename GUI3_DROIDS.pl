@@ -21,7 +21,11 @@ print "\n\nWelcome to DROIDS- Detecting Relative Outlier Impacts
 - visual toolbox for functional evolutionary comparison
   of molecular dynamic simulation \n\n";
 
-
+print "Enter residue number at the start of both chains\n";
+print "(e.g. enter 389 if starts at THR 389.A) \n";
+print "(e.g. enter 1 if starts at MET 1.A) \n\n";
+my $startN = <STDIN>;
+chop($startN);
 
 #### Declare variables ####
 my @rep = ();
@@ -217,7 +221,7 @@ my $mutFrame = $mw->Frame(	-label => "COLOR - NONHOMOLOGOUS REGIONS & MUTATIONS)
 						-value=>"tan",
 						-variable=>\$mutType
 						);
-    my $grayRadio = $mutFrame->Radiobutton( -text => "dark gray - (loose homology - large distancet)",
+    my $grayRadio = $mutFrame->Radiobutton( -text => "dark gray - (loose homology - large distance)",
 						-value=>"gray50",
 						-variable=>\$mutType
 						);
@@ -413,6 +417,7 @@ print("CTL file made\n");
 
 ########################################################################
 sub attribute_file {
+
 # Make Chimera-readable attribute file needed
 my $relevant_column = 0;
 $input_folder = "DROIDS_results_$queryID"."_$refID"."_$testStr"."_$cutoffValue";
@@ -447,9 +452,10 @@ open(INPUT, "<"."$input_folder/$input_file") or die "Could not find $input_file"
  my @IN = <INPUT>;
  my @OUTrows;
  for (my $a = 1; $a < scalar @IN; $a++) {
-	my $INrow = $IN[$a];
+	
+    my $INrow = $IN[$a];
 	my @INrow = split (/\s+/, $INrow);
-	my $index = $INrow[0];
+	my $index = $INrow[0] - ($startN - 1);
 	my $value = $INrow[$relevant_column];
 	#print $value;
 	$valuesList[$a] = $value;
@@ -538,8 +544,11 @@ open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
+    
+   $filenumber = $startN + $r;
+   
    # collect AA info
-    open(INFO, "<"."atomfluxscaled/DROIDSfluctuation_$r.txt") or next;
+    open(INFO, "<"."atomfluxscaled/DROIDSfluctuation_$filenumber.txt") or next;
     my @INFO = <INFO>;
     my $INFOrow = $INFO[1];
 	             my @INFOrow = split(/\s+/, $INFOrow); 
@@ -558,7 +567,7 @@ for (my $r = 0; $r <= $AA_count; $r++){
    my $flux_ref = ''; # flux on reference residue
    my $flux_query = ''; # flux on query residue
     # read data into R
-   print Rinput "data = read.table('atomfluxscaled/DROIDSfluctuation_$r.txt', header = TRUE)\n"; 
+   print Rinput "data = read.table('atomfluxscaled/DROIDSfluctuation_$filenumber.txt', header = TRUE)\n"; 
    $sample = "data\$sample"; # sample number
    $pos_ref = "data\$pos_ref"; # amino acid position
    $res_ref = "data\$res_ref"; # reference residue
@@ -620,8 +629,11 @@ open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
+   
+   $filenumber = $startN + $r;
+   
    # collect AA info
-    open(INFO, "<"."atomflux/DROIDSfluctuation_$r.txt") or next;
+    open(INFO, "<"."atomflux/DROIDSfluctuation_$filenumber.txt") or next;
     my @INFO = <INFO>;
     my $INFOrow = $INFO[1];
 	             my @INFOrow = split(/\s+/, $INFOrow); 
@@ -640,7 +652,7 @@ for (my $r = 0; $r <= $AA_count; $r++){
    my $flux_ref = ''; # flux on reference residue
    my $flux_query = ''; # flux on query residue
     # read data into R
-   print Rinput "data = read.table('atomflux/DROIDSfluctuation_$r.txt', header = TRUE)\n"; 
+   print Rinput "data = read.table('atomflux/DROIDSfluctuation_$filenumber.txt', header = TRUE)\n"; 
    $sample = "data\$sample"; # sample number
    $pos_ref = "data\$pos_ref"; # amino acid position
    $res_ref = "data\$res_ref"; # reference residue
@@ -702,8 +714,11 @@ open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
+   
+   $filenumber = $startN + $r;
+   
    # collect AA info
-    open(INFO, "<"."atomcorr/DROIDScorrelation_$r.txt") or next;
+    open(INFO, "<"."atomcorr/DROIDScorrelation_$filenumber.txt") or next;
     my @INFO = <INFO>;
     my $INFOrow = $INFO[1];
 	             my @INFOrow = split(/\s+/, $INFOrow); 
@@ -877,7 +892,7 @@ print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_que
 print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux)\n";
 print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
 print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
-print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number)', y = 'avg FLUX') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
+print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number)', y = 'avg FLUX') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
 print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'position (residue number)', y = 'direction dFLUX(signed)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
 #print Rinput "myplot3 <- ggplot(data = d3, mapping = aes(x = pos3, y = Y3val, fill=label3r)) + labs(x = 'position (residue number)', y = 'magnitude dFLUX(unsigned)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'), legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
 print Rinput "myplot3 <- ggplot(data = d4, mapping = aes(x = pos4, y = Y4val, fill=Y4label)) + labs(x = 'position (residue number)', y = 'D value (KS test)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
@@ -889,7 +904,7 @@ print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_que
 print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_corr)\n";
 print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_corr)\n";
 print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
-print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number) ref=red query=blue', y = 'avg CORR (ref vs query)') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
+print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number) ref=red query=blue', y = 'avg CORR (ref vs query)') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
 print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'position (residue number)', y = 'direction dCORR(signed)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
 #print Rinput "myplot3 <- ggplot(data = d3, mapping = aes(x = pos3, y = Y3val, fill=label3r)) + labs(x = 'position (residue number)', y = 'magnitude dCORR(unsigned)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'), legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
 print Rinput "myplot3 <- ggplot(data = d4, mapping = aes(x = pos4, y = Y4val, fill=Y4label)) + labs(x = 'position (residue number)', y = 'D value (KS test)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), panel.background = element_rect(fill = 'grey30'))\n";

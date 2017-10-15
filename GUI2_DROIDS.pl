@@ -84,7 +84,7 @@ my $corrButton = $mw -> Button(-text => "create atom correlation files",
 				-command => \&corr
 				); # Creates a file button
 
-my $doneButton = $mw -> Button(-text => "align structures / prepare files for DROIDS", 
+my $doneButton = $mw -> Button(-text => "parse / prepare files for DROIDS", 
 				-command => \&done
 				); # Creates a file button
 
@@ -268,24 +268,16 @@ system("cpptraj "."-i ./atomcorr_$fileIDr"."_$i.ctl | tee cpptraj_atomcorr_$file
 ###################################################################################################
 
 sub done {
-	
-print "IMPORTANT - Here you will need to run MatchMaker then Match-Align in Chimera\n\n";
-print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ubq_align.aln)\n\n";
-print "            DROIDS will prompt you to continue after closing Chimera\n\n";
-print "continue? (y/n)\n";
-my $go = <STDIN>;
-chop($go);
-if ($go eq "n") {exit;}
-sleep(1);
-print "            opening USCF Chimera and loading PDB ref structure\n\n";
-print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
-system("$chimera_path"."chimera $fileIDr.pdb $fileIDq.pdb\n");
+
+print "Enter residue number at the start of both chains\n";
+print "(e.g. enter 389 if starts at THR 389.A) \n";
+print "(e.g. enter 1 if starts at MET 1.A) \n\n";
+my $startN = <STDIN>;
+chop($startN);
+
 sleep(2);
 print "\n\n searching for atom info file = "."cpptraj_atominfo_$fileIDr.txt\n";
 sleep(2);
-
-###################################################################
 print "\n\n creating atom_residue_list_$fileIDr.txt\n";
 open(OUT, ">"."atom_residue_list_$fileIDr.txt") or die "could open output file\n";
 print OUT "atomnumber\t"."atomlabel\t"."resnumber\t"."reslabel\n";
@@ -297,8 +289,9 @@ for (my $i = 0; $i < scalar @IN; $i++){
 	 my $atomnumber = @INrow[1];
 	 my $atomlabel = @INrow[2];
 	 my $resnumber = @INrow[3];
+	 my $resindex = $resnumber + ($startN - 1);
 	 my $reslabel = @INrow[4];
-	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resnumber\t $reslabel\n"}
+	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resindex\t $reslabel\n"}
    }
 close IN;
 close OUT;
@@ -314,8 +307,9 @@ for (my $i = 0; $i < scalar @IN; $i++){
 	 my $atomnumber = @INrow[1];
 	 my $atomlabel = @INrow[2];
 	 my $resnumber = @INrow[3];
+	 my $resindex = $resnumber + ($startN - 1);
 	 my $reslabel = @INrow[4];
-	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resnumber\t $reslabel\n"}
+	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resindex\t $reslabel\n"}
    }
 close IN;
 close OUT;
@@ -361,9 +355,14 @@ open(OUT1, ">"."$fileIDr"."_vertalign_ref.aln") or die "could not open output fi
 print OUT1 "respos\t"."seq_ref\n";
 open(OUT2, ">"."$fileIDq"."_vertalign_query.aln") or die "could not open output file\n";
 print OUT2 "respos\t"."seq_query\n";
+open(OUT3, ">"."$fileIDr"."_vertalign_ref_indexed.aln") or die "could not open output file\n";
+print OUT3 "respos\t"."seq_ref\n";
+open(OUT4, ">"."$fileIDq"."_vertalign_query_indexed.aln") or die "could not open output file\n";
+print OUT4 "respos\t"."seq_query\n";
 open(IN1, "<"."$fileIDr"."_alignREFMAP.aln") or die "could not open alignment...did you save as (.aln)?\n";
 my @IN1 = <IN1>;
 my $position = 0;
+my $positionINDEX = $startN-1;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
@@ -376,6 +375,7 @@ for (my $i = 0; $i < scalar @IN1; $i++){
 																			my $AAref = @seq_ref[$ii]; 
 																			my $AAquery = @seq_query[$ii];
 																			$position = $position+1;
+																			$positionINDEX = $positionINDEX+1;
 																			open(IN2, "<"."amino1to3.txt") or die "could not open amino1to3.txt\n";
 																			my @IN2 = <IN2>;
 																			#print "AAref "."$AAref\n";
@@ -386,6 +386,8 @@ for (my $i = 0; $i < scalar @IN1; $i++){
 																					$AAone = @AArow[0]; $AAthree = @AArow[1];
 																					if ($AAone eq $AAref){print OUT1 "$position\t"."$AAthree\n"}
 																					if ($AAone eq $AAquery){print OUT2 "$position\t"."$AAthree\n"}
+																					if ($AAone eq $AAref){print OUT3 "$positionINDEX\t"."$AAthree\n"}
+																					if ($AAone eq $AAquery){print OUT4 "$positionINDEX\t"."$AAthree\n"}
 																					
 																			}
 																																						 
@@ -394,6 +396,8 @@ for (my $i = 0; $i < scalar @IN1; $i++){
 }
 close OUT1;
 close OUT2;
+close OUT3;
+close OUT4;
 close IN1;
 close IN2;
 sleep (2);
@@ -404,7 +408,7 @@ print "\n\n adding gaps to query atom residue list (if needed)\n";
 sleep(2);
 
 open(IN1, "<"."atom_residue_list_unmodified_$fileIDq.txt") or die "could not open atom_residue_list.txt\n";
-open(IN2, "<"."$fileIDq"."_vertalign_query.aln") or die "could not open output file\n";
+open(IN2, "<"."$fileIDq"."_vertalign_query_indexed.aln") or die "could not open output file\n";
 open(OUT, ">"."atom_residue_list_$fileIDq.txt") or die "could not make atom_residue_list.txt\n";
 #print OUT "atomnumber\t"."atomlabel\t"."resnumber\t"."reslabel\n";
 my @IN1 = <IN1>;
@@ -415,25 +419,25 @@ for (my $i = 0; $i < scalar @IN1; $i++){ # scan residue list
 			     my @IN1row = split(/\s+/, $IN1row);
 			     my $atomnumber = $IN1row[0];
 			     my $atomlabel = $IN1row[1];
-			     my $resnumber = $IN1row[2];
-			     my $reslabel = $IN1row[3];
-					 					 
+			     my $resindex = $IN1row[2];
+					 my $reslabel = $IN1row[3];
+					 				 
 					 for (my $j = 0; $j < scalar @IN2; $j++){ # scan alignment
 			        my $IN2row = $IN2[$j];
 			        my @IN2row = split(/\s+/, $IN2row);
 			        my $pos_query = $IN2row[0] - $indelCount;
 			        my $res_query = $IN2row[1];
-				      if ($pos_query == $resnumber && $res_query eq "xxx"){print OUT "na\t"."na\t"."na\t"."xxx\n"; print OUT "na\t"."na\t"."na\t"."xxx\n";print OUT "na\t"."na\t"."na\t"."xxx\n";print OUT "na\t"."na\t"."na\t"."xxx\n"; $indelCount = $indelCount+1}
-							if ($pos_query == $resnumber && $res_query ne "xxx"){print OUT "$atomnumber\t"."$atomlabel\t"."$resnumber\t"."$reslabel\n";}		
+							my $resindexgap = $resindex + $indelCount;
+							#print "$pos_query\t"."$resindex\n";
+				      if ($pos_query == $resindex && $res_query eq "xxx"){print OUT "na\t"."na\t"."na\t"."xxx\n"; print OUT "na\t"."na\t"."na\t"."xxx\n";print OUT "na\t"."na\t"."na\t"."xxx\n";print OUT "na\t"."na\t"."na\t"."xxx\n"; $indelCount = $indelCount+1}
+							if ($pos_query == $resindex && $res_query ne "xxx"){print OUT "$atomnumber\t"."$atomlabel\t"."$resindexgap\t"."$reslabel\n";}		
 			       
 						 }
+					 
 					 #print "$reslabel\t".@skipped."\n";
 					 
 			}
 
-
-
- 
 close IN1;
 close IN2;
 close OUT;
@@ -461,18 +465,20 @@ my @IN4 = <IN4>;
 					 # assemble fluctuation data
 			     for (my $ii = 0; $ii < $runsID; $ii++){  #scan flux data
 	            $sample = $ii;
-							open(IN5, "<"."fluct_$fileIDr"."_$ii.txt") or die "could not open fluct file for $fileIDq\n";
-              open(IN6, "<"."fluct_$fileIDq"."_$ii.txt") or die "could not open fluct file for $fileIDr\n";
+							open(IN5, "<"."fluct_$fileIDq"."_$ii.txt") or die "could not open fluct file for $fileIDq\n";
+              open(IN6, "<"."fluct_$fileIDr"."_$ii.txt") or die "could not open fluct file for $fileIDr\n";
 	            my @IN5 = <IN5>;
               my @IN6 = <IN6>;
-			        for (my $iii = 0; $iii < scalar @IN5; $iii++){
+			        $flux_query = '';
+							$flux_ref = '';
+							for (my $iii = 0; $iii < scalar @IN5; $iii++){
 							    my $IN5row = $IN5[$iii];
 									$IN5row =~ s/^\s+//;# need trim leading whitespace if present 
 	                my @IN5row = split(/\s+/, $IN5row);
 									my $Qtest_atom_decimal = $IN5row[0];
 									my $Qtest_atom = int($Qtest_atom_decimal);
 							    #print "Q "."$Qtest_atom\t"."$atomnumberQ\n";
-									if($atomnumberQ == $Qtest_atom){$flux_query = $IN5row[1];}
+									if($atomnumberQ eq $Qtest_atom){$flux_query = $IN5row[1];}
 							  }	
 							for (my $iii = 0; $iii < scalar @IN6; $iii++){
 									my $IN6row = $IN6[$iii];
@@ -481,7 +487,7 @@ my @IN4 = <IN4>;
 			            my $Rtest_atom_decimal = $IN6row[0];
 									my $Rtest_atom = int($Rtest_atom_decimal);
 									#print "R "."$Rtest_atom\t"."$atomnumberR\n";
-									if($atomnumberR == $Rtest_atom){$flux_ref = $IN6row[1];}
+									if($atomnumberR eq $Rtest_atom){$flux_ref = $IN6row[1];}
 							  }
 							
 					    if($resnumberR =~/\d/ && $flux_query=~/\d/ && $reslabelQ ne "xxx"){
@@ -490,7 +496,7 @@ my @IN4 = <IN4>;
 							    }
 							if($resnumberR =~/\d/ && $reslabelQ eq "xxx"){
 							    #print "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$flux_ref\t"."NA\n";
-							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$flux_ref\t"."NA\n";
+							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."NA\t"."NA\n";
 							    }
 							
 							
@@ -552,9 +558,9 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
            $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = -($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
 					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 if ($pos_ref =~ m/\d/){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
+					 if ($pos_ref =~ m/\d/ && $j>1){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
 					 my @REFfluxAvg = ();
            my @QUERYfluxAvg = ();
 					 if ($next_pos eq ''){next;}
@@ -570,9 +576,9 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
            $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = -($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
 					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 if ($pos_ref =~ m/\d/){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
+					 if ($pos_ref =~ m/\d/ && $j>1){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
 					 my @REFfluxAvg = ();
            my @QUERYfluxAvg = ();
 					 if ($next_pos eq ''){next;}
@@ -586,6 +592,7 @@ close OUT;
 close OUT2;
 
 sleep(1);
+
 #######################################################################################
 print "  creating query FLUX scaled to avg reference FLUX\n";
 sleep(2);
@@ -617,7 +624,7 @@ for (my $c = 0; $c < scalar @IN; $c++){
     my $res_query = $INrow[2];
     my $flux_ref_avg = $INrow[3];
     $flux_query_avg = $INrow[4] - $scaling_factor;
-    $delta_flux = -($flux_ref_avg - $flux_query_avg);
+    $delta_flux = ($flux_ref_avg - $flux_query_avg);
     $abs_delta_flux = abs($delta_flux);
     if ($pos_ref ne "pos_ref"){print OUT "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
 }
@@ -641,7 +648,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 my $atomlabel = $INrow[5];
 					 my $flux_ref = $INrow[6];
 					 my $flux_query = $INrow[7];
-					 $flux_query = $flux_query - $scaling_factor;
+					 $flux_query = $flux_query + $scaling_factor;
 					 push(@REFfluxAvg, $flux_ref);
 					 push(@QUERYfluxAvg, $flux_query);
 					 my $INnextrow = $IN[$j+1];
@@ -812,8 +819,8 @@ my @IN4 = <IN4>;
 					 # assemble fluctuation data
 			     for (my $ii = 0; $ii < $runsID; $ii++){  #scan flux data
 	            $sample = $ii;
-							open(IN5, "<"."corr_mask_$fileIDr"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDq\n";
-              open(IN6, "<"."corr_mask_$fileIDq"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDr\n";
+							open(IN5, "<"."corr_mask_$fileIDq"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDq\n";
+              open(IN6, "<"."corr_mask_$fileIDr"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDr\n";
 	            my @IN5 = <IN5>;
               my @IN6 = <IN6>;
 			        for (my $iii = 0; $iii < scalar @IN5; $iii++){
@@ -895,7 +902,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
            $statSCORE->add_data (@QUERYcorrAvg);
 					 $corr_query_avg = $statSCORE->mean();
-					 $delta_corr = -($corr_ref_avg - $corr_query_avg);
+					 $delta_corr = ($corr_ref_avg - $corr_query_avg);
 					 $abs_delta_corr = abs($corr_ref_avg - $corr_query_avg);
 					 if ($pos_ref =~ m/\d/ && $res_query ne "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."$corr_query_avg\t"."$delta_corr\t"."$abs_delta_corr\n";}
 					 if ($pos_ref =~ m/\d/ && $res_query eq "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."NA\t"."NA\t"."NA\n";}
@@ -913,7 +920,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
            $statSCORE->add_data (@QUERYcorrAvg);
 					 $corr_query_avg = $statSCORE->mean();
-					 $delta_corr = -($corr_ref_avg - $corr_query_avg);
+					 $delta_corr = ($corr_ref_avg - $corr_query_avg);
 					 $abs_delta_corr = abs($corr_ref_avg - $corr_query_avg);
 					 if ($pos_ref =~ m/\d/ && $res_query ne "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."$corr_query_avg\t"."$delta_corr\t"."$abs_delta_corr\n";}
 					 if ($pos_ref =~ m/\d/ && $res_query eq "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."NA\t"."NA\t"."NA\n";}

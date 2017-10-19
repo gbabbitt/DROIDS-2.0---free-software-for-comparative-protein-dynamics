@@ -338,18 +338,10 @@ system "perl GUI2_DROIDS.pl";
 
 sub align{
 
-$warn = "N";
-
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
-print "STEP 2 - then manually trim the nonhomologous AA's from N and C terminus\n";
-print "         NOTE: it is critical that both chains are of the same length\n\n";
-print "STEP 3 - Save trimmed chains by overwriting the PDB files\n\n";
-print "STEP 4 - After trimming and saving PDB, rerun MatchMaker in UCSF Chimera\n\n";
-print "STEP 5 - Then run Match-Align in UCSF Chimera\n\n";
+print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
 print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
 print "            in title (e.g. 1ubq_align.aln)\n\n";
-
-
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;
@@ -363,14 +355,6 @@ system("$chimera_path"."chimera $fileIDr.pdb $fileIDq.pdb\n");
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
 sleep(0.5);
-## check that chains in PDB file are equal length
-
-
-########
-if ($warn eq "Y"){print "\n\n WARNING: you still need to trim nonhomologous AA's\n";
-				  print "from the terminal ends of chains in the PBD files\n";}
-elsif($warn eq "N"){print "\n\n PDB chains are of equal length.  You can proceed.\n";}
-	
 	
 }
 

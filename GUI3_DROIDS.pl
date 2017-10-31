@@ -265,11 +265,13 @@ my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots
 my $displayButton = $mw -> Button(-text => "display statistics on PDB reference structure", 
 				-command => \&display
 				); # Creates a final results display button
-my $playButton = $mw -> Button(-text => "play movies on XYZ axes in DROIDS viewer", 
-				-command => \&play
+my $playXYZbutton = $mw -> Button(-text => "play movies on XYZ axes in DROIDS viewer", 
+				-command => \&playXYZ
 				); # Creates a final results display button
-
-my $moviesButton = $mw -> Button(-text => "render movies on XYZ axes in Chimera", 
+my $playROLLbutton = $mw -> Button(-text => "play movies on ROLLING axes in DROIDS viewer", 
+				-command => \&playROLL
+				); # Creates a final results display button
+my $moviesButton = $mw -> Button(-text => "render movies in UCSF Chimera", 
 				-command => \&movies
 				); # Creates a movie maker button
 
@@ -290,7 +292,10 @@ my $attrButton = $mw -> Button(-text => "make attribute file for Chimera",
 $stopButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$playButton->pack(-side=>"bottom",
+$playXYZbutton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$playROLLbutton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $moviesButton->pack(-side=>"bottom",
@@ -956,9 +961,9 @@ system "evince ./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_si
 
 ############################################################################################################
 sub movies{
-print("Rendering 6 movies on XYZ axes...\n");
+print("Rendering 8 movies on XYZ axes...\n");
 print("this may take several minutes...\n\n");
-print("close Chimera window when 6 movie files appear in movies folder\n\n");
+print("close Chimera window when 8 movie files appear in movies folder\n\n");
 #print("/opt/UCSF/Chimera64-1.11/bin/chimera --script \"render_movies.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");
 if ($mutType eq "tan"){system("$chimera_path"."chimera --script \"render_movies_tan.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
 if ($mutType eq "gray50"){system("$chimera_path"."chimera --script \"render_movies_gray.py	--rep=$repStr --test=$testStr --qID=$queryID --rID=$refID --lengthID=$lengthID --cutoff=$cutoffValue --colorType=$colorType --testType=$testStr --attr=$attr --minVal=$min_val --maxVal=$max_val --frameCount=$frameCount\"\n");}
@@ -982,12 +987,24 @@ print("\n\n Display complete\n\n");
 }
 
 ############################################################################################################
-sub play{
+sub playXYZ{
 print("Preparing movie display...\n");
 print("close DROIDS movie windows to exit\n\n");
 my @movies;
 my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2');
-for (my $i = 0; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+#for (my $i = 6; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+my $movieStr = join(" ", @movies);
+system("python DROIDS_gstreamer.py @movies");
+}
+#############################################################################################################
+sub playROLL{
+print("Preparing movie display...\n");
+print("close DROIDS movie windows to exit\n\n");
+my @movies;
+my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2');
+#for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+for (my $i = 6; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 my $movieStr = join(" ", @movies);
 system("python DROIDS_gstreamer.py @movies");
 }

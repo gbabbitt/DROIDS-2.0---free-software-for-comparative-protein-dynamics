@@ -174,7 +174,9 @@ my $controlButton = $mw -> Button(-text => "make MD control files (.ctl)",
 				); # Creates a ctl file button
 
 my $launchButton = $mw -> Button(-text => "launch MD run (pmemd.cuda)", 
-				-command => \&launch
+				-command => \&launch,
+				-background => 'gray45',
+				-foreground => 'white'
 				); # Creates a launch button
 
 my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU", 

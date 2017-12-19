@@ -9,6 +9,7 @@ use List::Util qw( max );
 use List::Util qw(min max);
 use Descriptive();
 
+
 # specify the path to working directory for Chimera here
 
 my $chimera_path = "/opt/UCSF/Chimera64-1.11/bin/";
@@ -40,7 +41,7 @@ my $ribbon = 0;
 my $rep;
 #my $flux = 0;
 #my $corr = 0;
-my $cutoffValue = 0.05;
+my $cutoffValue = 0.01;
 my $colorType = '';
 my $testType = '';
 my $attr = '';
@@ -87,15 +88,15 @@ my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
 				-relief => "groove",
 				-borderwidth => 2
 				);
-	my $rgRadio = $seqFrame->Radiobutton(-text=>"red-green (for delta)",
+	my $rgRadio = $seqFrame->Radiobutton(-text=>"red-green (for dFLUX)",
 						-value=>"rg",
 						-variable=>\$colorType
 						);
-	my $ybRadio = $seqFrame->Radiobutton(-text=>"yellow-blue (for delta)",
+	my $ybRadio = $seqFrame->Radiobutton(-text=>"yellow-blue (for dFLUX)",
 						-value=>"yb",
 						-variable=>\$colorType
 						);
-	my $omRadio = $seqFrame->Radiobutton(-text=>"orange-magenta (for delta)",
+	my $omRadio = $seqFrame->Radiobutton(-text=>"orange-magenta (for dFLUX)",
 						-value=>"om",
 						-variable=>\$colorType
 						);	
@@ -107,35 +108,21 @@ my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
 						-value=>"rw",
 						-variable=>\$colorType
 						);
-	my $wgRadio = $seqFrame->Radiobutton(-text=>"white-green (for test stat)",
+	my $wgRadio = $seqFrame->Radiobutton(-text=>"white-green (for D stat or G score)",
 						-value=>"wg",
 						-variable=>\$colorType
 						);
-	my $woRadio = $seqFrame->Radiobutton(-text=>"white-orange (for test stat)",
+	my $woRadio = $seqFrame->Radiobutton(-text=>"white-orange (for D stat or G score)",
 						-value=>"wo",
 						-variable=>\$colorType
 						);
 	
-# Test Type Frame
-my $testFrame = $mw->Frame(	-label => "ATOM MOTION TYPE TO ANALYZE",
-				-relief => "groove",
-				-borderwidth => 2
-				);
-	my $fluxCheck = $testFrame->Radiobutton( -text => "atom fluctuation",
-						-value=>"fx",
-						-variable=>\$testType
-						);
-	my $corrCheck = $testFrame->Radiobutton( -text => "atom correlation",
-						-value=>"cr",
-						-variable=>\$testType
-						);
-
 # Attribute Frame
 my $attrFrame = $mw->Frame(	-label => "ATTRIBUTE TO COLOR BY",
 				-relief => "groove",
 				-borderwidth => 2
 				);
-	my $deltaRadio = $attrFrame->Radiobutton( -text => "delta (flux/corr)",
+	my $deltaRadio = $attrFrame->Radiobutton( -text => "dFLUX",
 						-value=>"delta",
 						-variable=>\$attr
 						);
@@ -143,25 +130,14 @@ my $attrFrame = $mw->Frame(	-label => "ATTRIBUTE TO COLOR BY",
 						-value=>"pval",
 						-variable=>\$attr
 						);
-	my $statRadio = $attrFrame->Radiobutton( -text => "test stat (D value)",
+	my $statRadio = $attrFrame->Radiobutton( -text => "KS test (D stat)",
 						-value=>"dval",
 						-variable=>\$attr
 						);
-
-# Scaling Frame
-my $scalingFrame = $mw->Frame(	-label => "dFLUX CALCULATION",
-				-relief => "groove",
-				-borderwidth => 2
-				);
-	my $absoluteRadio = $scalingFrame->Radiobutton( -text => "absolute   (use unmodified FLUX values)",
-						-value=>"absolute",
-						-variable=>\$scalingType
+    my $gdistRadio = $attrFrame->Radiobutton( -text => "Grantham Score",
+						-value=>"gdist",
+						-variable=>\$attr
 						);
-	my $relativeRadio = $scalingFrame->Radiobutton( -text => "relative   (scale query FLUX to avg reference FLUX)",
-						-value=>"relative",
-						-variable=>\$scalingType
-						);
-
 
 # multiple test correction Frame
 my $mtcFrame = $mw->Frame(	-label => "MULTIPLE TEST CORRECTION",
@@ -182,10 +158,10 @@ my $mtcFrame = $mw->Frame(	-label => "MULTIPLE TEST CORRECTION",
 						);
 
 # color scale Frame
-my $scaleFrame = $mw->Frame(	-label => "SCALE RANGE for\n delta(flux/corr)\n",
+my $scaleFrame = $mw->Frame(	-label => "SCALE RANGE FOR dFLUX",
 				-relief => "groove",
 				-borderwidth => 2
-				);
+                );
 	my $autoRadio = $scaleFrame->Radiobutton( -text => "autoscale to min/max value",
 						-value=>"auto",
 						-variable=>\$scaleType
@@ -205,23 +181,23 @@ my $scaleFrame = $mw->Frame(	-label => "SCALE RANGE for\n delta(flux/corr)\n",
 
 
 # mutation color Frame
-my $mutFrame = $mw->Frame(	-label => "COLOR - NONHOMOLOGOUS REGIONS & MUTATIONS)",
+my $mutFrame = $mw->Frame(	-label => "COLOR - NONHOMOLOGOUS REGIONS & MUTATIONS",
 				-relief => "groove",
 				-borderwidth => 2
 				);
-	my $yellowRadio = $mutFrame->Radiobutton( -text => "yellow - (strict homology - small distance)",
+	my $yellowRadio = $mutFrame->Radiobutton( -text => "yellow - (best for highlighting mutation)",
 						-value=>"yellow",
 						-variable=>\$mutType
 						);
-    my $redRadio = $mutFrame->Radiobutton( -text => "red -(strict homology - small distance)",
+    my $redRadio = $mutFrame->Radiobutton( -text => "red - (best for highlighting mutation)",
 						-value=>"red",
 						-variable=>\$mutType
 						);
-	my $tanRadio = $mutFrame->Radiobutton( -text => "tan - (loose homology - large distance)",
+	my $tanRadio = $mutFrame->Radiobutton( -text => "tan - (for mutation or nonhomologous region)",
 						-value=>"tan",
 						-variable=>\$mutType
 						);
-    my $grayRadio = $mutFrame->Radiobutton( -text => "dark gray - (loose homology - large distance)",
+    my $grayRadio = $mutFrame->Radiobutton( -text => "dark gray - (best for large nonhomologous regions)",
 						-value=>"gray50",
 						-variable=>\$mutType
 						);
@@ -259,33 +235,49 @@ my $pdbFrame = $mw->Frame();
 # Buttons
 
 my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots in R", 
-				-command => \&stats
+				-command => \&stats,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a stats test button
 
 my $displayButton = $mw -> Button(-text => "display statistics on PDB reference structure", 
-				-command => \&display
+				-command => \&display,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a final results display button
 my $playXYZbutton = $mw -> Button(-text => "play movies on XYZ axes in DROIDS viewer", 
-				-command => \&playXYZ
+				-command => \&playXYZ,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a final results display button
 my $playROLLbutton = $mw -> Button(-text => "play movies on ROLLING axes in DROIDS viewer", 
-				-command => \&playROLL
+				-command => \&playROLL,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a final results display button
 my $moviesButton = $mw -> Button(-text => "render movies in UCSF Chimera", 
-				-command => \&movies
+				-command => \&movies,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a movie maker button
 
 my $stopButton = $mw -> Button(-text => "exit DROIDS", 
-				-command => \&stop
+				-command => \&stop,
+                -background => 'gray45',
+                -foreground => 'white'
 				); # Creates a exit button
 
 my $ctlButton = $mw -> Button(-text => "make control file (DROIDS.ctl)", 
-				-command => \&ctl
-				); # Creates a ctl file button
+				-command => \&ctl,
+                -background => 'gray45',
+                -foreground => 'white'
+                ); # Creates a ctl file button
 
 my $attrButton = $mw -> Button(-text => "make attribute file for Chimera", 
-				-command => \&attribute_file
-				); # Creates a attr file button
+				-command => \&attribute_file,
+                -background => 'gray45',
+                -foreground => 'white'
+                ); # Creates a attr file button
 
 
 #### Organize GUI Layout ####
@@ -307,12 +299,7 @@ $displayButton->pack(-side=>"bottom",
 $attrButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$statsButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
-$ctlButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
+
 
 
 $queryLabel->pack(-side=>"left");
@@ -333,21 +320,20 @@ $frameFrame->pack(-side=>"top",
 		-anchor=>"e");
 $pdbFrame->pack(-side=>"top",
 		-anchor=>"n");
-$testFrame->pack(-side=>"top",
-		-anchor=>"s"
-		);
 $cutoffScale->pack(-side=>"top");
 $mtcFrame->pack(-side=>"top",
 		-anchor=>"s"
 		);
-$scalingFrame->pack(-side=>"top",
-		-anchor=>"s"
-		);
+
+$ctlButton->pack(-side=>"top",
+			-anchor=>"s"
+			);
+$statsButton->pack(-side=>"top",
+			-anchor=>"s"
+			);
 
 $surfaceCheck->pack();
 $ribbonCheck->pack();
-$fluxCheck->pack();
-$corrCheck->pack();
 $repFrame->pack(-side=>"left",
 		-anchor=>"n"
 		);
@@ -361,6 +347,7 @@ $woRadio->pack();
 $deltaRadio->pack();
 $pValueRadio->pack();
 $statRadio->pack();
+$gdistRadio->pack();
 $noneRadio->pack();
 $bonfRadio->pack();
 $fdrRadio->pack();
@@ -368,8 +355,6 @@ $autoRadio->pack();
 $fixed2Radio->pack();
 $fixed1Radio->pack();
 $fixed05Radio->pack();
-$absoluteRadio->pack();
-$relativeRadio->pack();
 $yellowRadio->pack();
 $redRadio->pack();
 $tanRadio->pack();
@@ -405,16 +390,15 @@ print("Making ctl file...\n");
 	if ($surface == 1 && $ribbon == 0) {$repStr =  "surface";} # opaque surface rep only
 	if ($surface == 1 && $ribbon == 1) {$repStr =  "ribbonsurface";} # opaque ribbon with transparent surface
 
-	if ($testType  eq "fx") {$testStr = "flux"; $testStrLong = "fluctuation";}
-	if ($testType eq "cr") {$testStr = "corr"; $testStrLong = "correlation";}
-		
+	$testStr = "flux"; $testStrLong = "fluctuation";  # file and folder labels
+	
 open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "query\t"."$queryID\t # Protein Data Bank ID for query structure\n";
 print CTL "reference\t"."$refID\t # Protein Data Bank ID for reference structure (or neutral model)\n";
 print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
 print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
 print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
-print CTL "test_type\t"."$testStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
+print CTL "test_type\t"."$testStr\t # test method (sequence = local Grantham dist, structure = RMSD, fluctuation = MD)\n";
 print CTL "color_scheme\t"."$colorType\t # output color scheme (red-green, yellow-blue, or orange-magenta)\n";
 close CTL;
 print("CTL file made\n");
@@ -436,14 +420,15 @@ if($attr eq "dval") {
 	$relevant_column = 3;
 }
 
-if($attr eq "delta" && $scalingType eq "relative") {
-	$input_file = "DROIDS$testStrLong"."AVGscaled.txt";
-	$relevant_column = 5;
-}
-if($attr eq "delta" && $scalingType eq "absolute") {
+if($attr eq "delta") {
 	$input_file = "DROIDS$testStrLong"."AVG.txt";
 	$relevant_column = 5;
 }
+if($attr eq "gdist") {
+	$input_file = "myGranthamDistances.txt";
+	$relevant_column = 1;
+}
+
 #print("$relevant_column\n");
 #print "$input_folder\n";
 #print "$input_file\n";
@@ -483,6 +468,7 @@ my $max = max(@valuesList);
 #print("min is $min\n");
 my $max_abs_val = abs(max($max,-$min));
 #print("abs max is $max_abs_val\n");
+if($attr eq "gdist") {$max_val = 215; $min_val = 0;}
 if($attr eq "dval") {$max_val = $max; $min_val = 0;}
 if($attr eq "pval") {$max_val = $cutoffValue; $min_val = 0;}
 if($attr eq "delta" & $scaleType eq "auto") {$max_val = $max_abs_val; $min_val = -1 * $max_abs_val;}
@@ -516,7 +502,7 @@ my $referenceID = '';
 my $AA_count = '';
 my $level_sig = '';
 my $surface_or_ribbon = '';
-my $flux_or_corr = '';
+my $seq_struct_flux = '';
 my $color_scheme = '';
 
 
@@ -533,104 +519,20 @@ for (my $c = 0; $c <= scalar @IN; $c++){
     if ($header eq "length") { $AA_count = $value;}
     if ($header eq "cutoff_value") { $level_sig = $value;}
     if ($header eq "representations") { $surface_or_ribbon = $value;}
-    if ($header eq "test_type") { $flux_or_corr = $value;}
+    if ($header eq "test_type") { $seq_struct_flux = $value;}
 	if ($header eq "color_scheme") { $color_scheme = $value;}
 
 }
 close IN;
 sleep(1);
-##########################################
-if ($flux_or_corr eq "flux" && $scalingType eq "relative"){
-
-mkdir ("DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig") or die "DROID_results folder already exists...delete or rename it if running again";
-open(STAT1, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt")or die "could not open statistics.txt\n";
-close STAT1;
-open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
-print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
-
-for (my $r = 0; $r <= $AA_count; $r++){
-    
-   $filenumber = $startN + $r;
-   
-   # collect AA info
-    open(INFO, "<"."atomfluxscaled/DROIDSfluctuation_$filenumber.txt") or next;
-    my @INFO = <INFO>;
-    my $INFOrow = $INFO[1];
-	             my @INFOrow = split(/\s+/, $INFOrow); 
-			     my $posAA = $INFOrow[1];
-				 my $refAA = $INFOrow[2];
-				 my $queryAA = $INFOrow[3];
-   open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-   # load plotting libraries
-   print Rinput "library(ggplot2)\n";
-   my $sample = ''; # sample number
-   my $pos_ref = ''; # amino acid position
-   my $res_ref = ''; # reference residue
-   my $res_query = ''; # query residue
-   my $atomnumber = ''; # cpptraj atom number
-   my $atomlabel = ''; # cpptraj atom number
-   my $flux_ref = ''; # flux on reference residue
-   my $flux_query = ''; # flux on query residue
-    # read data into R
-   print Rinput "data = read.table('atomfluxscaled/DROIDSfluctuation_$filenumber.txt', header = TRUE)\n"; 
-   $sample = "data\$sample"; # sample number
-   $pos_ref = "data\$pos_ref"; # amino acid position
-   $res_ref = "data\$res_ref"; # reference residue
-   $res_query = "data\$res_query"; # query residue
-   $atomnumber = "data\$atom number"; # cpptraj atom number
-   $atomlabel = "data\$atom label"; # cpptraj atom number
-   $flux_ref = "data\$flux_ref"; # flux on reference residue
-   $flux_query = "data\$flux_query"; # flux on query residue
-   print Rinput "d1 = data.frame(pos=$pos_ref, res=$res_ref, fluxR=$flux_ref, fluxQ=$flux_query)\n";
-   print Rinput "ks_test<-ks.test($flux_ref, $flux_query)\n";
-   print Rinput "print(ks_test)\n";
-   #print to file
-   print Rinput "sink('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt')\n";
-   print Rinput "ks_test<-ks.test($flux_ref, $flux_query)\n";
-   print Rinput "print(ks_test)\n";
-   print Rinput "sink()\n";#quit
-   # write to output file and quit R
-   print Rinput "q()\n";# quit R 
-   print Rinput "n\n";# save workspace image?
-   close Rinput;
-   print "\n\n";
-   open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
-   my @IN2 = <IN2>;
-   my $label_sig = '';
-   for (my $rr = 0; $rr < scalar @IN2; $rr++){ # scan atom type
-			     my $IN2row = $IN2[$rr];
-	             my @IN2row = split(/\s+/, $IN2row); 
-			     my $testD = $IN2row[0];
-				 my $Dval = $IN2row[2];
-				 $Dval =~ s/,//g; # remove trailing comma
-				 $Dval = $Dval + 0; # force to a number 
-				 my $pval = $IN2row[5];
-				 $pval = $pval + 0; # force to a number 
-				 if ($pval <= $level_sig){$label_sig = "<1alpha";}
-				 if ($pval <= (0.5*$level_sig)){$label_sig = "<0.5alpha";}
-				 if ($pval <= (0.1*$level_sig)){$label_sig = "<0.1alpha";}
-				 if ($pval > $level_sig){$label_sig = "ns";}
-				 if ($testD eq "D"){print STAT2 "$posAA\t"."$refAA\t"."$queryAA\t"."$Dval\t"."$pval\t"."$label_sig\n"}
-                 }
-   close IN2;
-   
-   }	
-close STAT2;
-## remove temp file
-unlink("./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
-## copy residue avg data into results file
-copy("DROIDSfluctuationAVG.txt", "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVG.txt");
-copy("DROIDSfluctuationAVGscaled.txt", "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVGscaled.txt");
-
-}
 
 ##########################################
-if ($flux_or_corr eq "flux" && $scalingType eq "absolute"){
+if ($seq_struct_flux eq "flux"){
 
-mkdir ("DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig") or die "DROID_results folder already exists...delete or rename it if running again";
-open(STAT1, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt")or die "could not open statistics.txt\n";
+mkdir ("DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig") or die "DROID_results folder already exists...delete or rename it if running again";
+open(STAT1, ">"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStestsTEMP.txt")or die "could not open statistics.txt\n";
 close STAT1;
-open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
+open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
 print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
@@ -670,7 +572,7 @@ for (my $r = 0; $r <= $AA_count; $r++){
    print Rinput "ks_test<-ks.test($flux_ref, $flux_query)\n";
    print Rinput "print(ks_test)\n";
    #print to file
-   print Rinput "sink('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt')\n";
+   print Rinput "sink('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStestsTEMP.txt')\n";
    print Rinput "ks_test<-ks.test($flux_ref, $flux_query)\n";
    print Rinput "print(ks_test)\n";
    print Rinput "sink()\n";#quit
@@ -679,7 +581,7 @@ for (my $r = 0; $r <= $AA_count; $r++){
    print Rinput "n\n";# save workspace image?
    close Rinput;
    print "\n\n";
-   open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
+   open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStestsTEMP.txt");
    my @IN2 = <IN2>;
    my $label_sig = '';
    for (my $rr = 0; $rr < scalar @IN2; $rr++){ # scan atom type
@@ -702,108 +604,61 @@ for (my $r = 0; $r <= $AA_count; $r++){
    }	
 close STAT2;
 ## remove temp file
-unlink("./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
+unlink("./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStestsTEMP.txt");
 ## copy residue avg data into results file
-copy("DROIDSfluctuationAVG.txt", "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVG.txt");
-copy("DROIDSfluctuationAVGscaled.txt", "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVGscaled.txt");
-
+copy("DROIDSfluctuationAVG.txt", "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/DROIDSfluctuationAVG.txt");
+copy("myGranthamDistances.txt", "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/myGranthamDistances.txt");
+copy("mySeqSTATS.txt", "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/mySeqSTATS.txt");
+#copy("replylog.dat", "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/replylog.dat");
 }
 
-########################################
-if ($flux_or_corr eq "corr"){
+#################### find average abs dFLUX #########################
 
-mkdir ("DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig") or die "DROID_results folder already exists...delete or rename it if running again";
-open(STAT1, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt")or die "could not open statistics.txt\n";
-close STAT1;
-open(STAT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt")or die "could not open statistics.txt\n";
-print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
-
-for (my $r = 0; $r <= $AA_count; $r++){
-   
-   $filenumber = $startN + $r;
-   
-   # collect AA info
-    open(INFO, "<"."atomcorr/DROIDScorrelation_$filenumber.txt") or next;
-    my @INFO = <INFO>;
-    my $INFOrow = $INFO[1];
-	             my @INFOrow = split(/\s+/, $INFOrow); 
-			     my $posAA = $INFOrow[1];
-				 my $refAA = $INFOrow[2];
-				 my $queryAA = $INFOrow[3];
-   open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-   # load plotting libraries
-   print Rinput "library(ggplot2)\n";
-   my $sample = ''; # sample number
-   my $pos_ref = ''; # amino acid position
-   my $res_ref = ''; # reference residue
-   my $res_query = ''; # query residue
-   my $atomnumber = ''; # cpptraj atom number
-   my $atomlabel = ''; # cpptraj atom number
-   my $corr_ref = ''; # corr on reference residue
-   my $corr_query = ''; # corr on query residue
-
-    # read data into R
-   print Rinput "data = read.table('atomcorr/DROIDScorrelation_$r.txt', header = TRUE)\n"; 
-   $sample = "data\$sample"; # sample number
-   $pos_ref = "data\$pos_ref"; # amino acid position
-   $res_ref = "data\$res_ref"; # reference residue
-   $res_query = "data\$res_query"; # query residue
-   $atomnumber = "data\$atom number"; # cpptraj atom number
-   $atomlabel = "data\$atom label"; # cpptraj atom number
-   $corr_ref = "data\$corr_ref"; # flux on reference residue
-   $corr_query = "data\$corr_query"; # flux on query residue
-   
-   print Rinput "d1 = data.frame(pos=$pos_ref, res=$res_ref, corrR=$corr_ref, corrQ=$corr_query)\n";
-   print Rinput "ks_test<-ks.test($corr_ref, $corr_query)\n";
-   print Rinput "print(ks_test)\n";
-   #print to file
-   print Rinput "sink('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt')\n";
-   print Rinput "ks_test<-ks.test($corr_ref, $corr_query)\n";
-   print Rinput "print(ks_test)\n";
-   print Rinput "sink()\n";#quit
-   # write to output file and quit R
-   print Rinput "q()\n";# quit R 
-   print Rinput "n\n";# save workspace image?
-   close Rinput;
-   print "\n\n";
-   open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
-   my @IN2 = <IN2>;
-   my $label_sig = '';
-   for (my $rr = 0; $rr < scalar @IN2; $rr++){ # scan atom type
-			     my $IN2row = $IN2[$rr];
-	             my @IN2row = split(/\s+/, $IN2row); 
-			     my $testD = $IN2row[0];
-				 my $Dval = $IN2row[2];
-				 $Dval =~ s/,//g; # remove trailing comma
-				 $Dval = $Dval + 0; # force to a number 
-				 my $pval = $IN2row[5];
-				 $pval = $pval + 0; # force to a number 
-				 if ($pval <= $level_sig){$label_sig = "<1alpha";}
-				 if ($pval <= (0.5*$level_sig)){$label_sig = "<0.5alpha";}
-				 if ($pval <= (0.1*$level_sig)){$label_sig = "<0.1alpha";}
-				 if ($pval > $level_sig){$label_sig = "ns";}
-				 if ($testD eq "D"){print STAT2 "$posAA\t"."$refAA\t"."$queryAA\t"."$Dval\t"."$pval\t"."$label_sig\n"}
+open (OUT1, ">>"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/mySeqSTATS.txt");
+open (IN1, "<"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/DROIDSfluctuationAVG.txt");
+@dFLUXvals = ();
+my @IN1 = <IN1>;
+for (my $w = 0; $w < scalar @IN1; $w++){ # scan dFLUX
+			     my $IN1row = $IN1[$w];
+	             my @IN1row = split(/\s+/, $IN1row); 
+			     my $dFLUXval = $IN1row[6]; # abs dFLUX
+                 push (@dFLUXvals, $dFLUXval); 
                  }
-   close IN2;
-   
-   }	
-close STAT2;
-## remove temp file
-unlink("./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStestsTEMP.txt");
-## copy residue avg data into results file
-copy("DROIDScorrelationAVG.txt", "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDScorrelationAVG.txt");
-}
+    $statSCORE = new Statistics::Descriptive::Full; # avg abs delta flux
+    $statSCORE->add_data (@dFLUXvals);
+	$avg_abs_dFLUX = $statSCORE->mean();
+    $avg_abs_dFLUX = sprintf "%.2f", $avg_abs_dFLUX;
+close IN1;
+print OUT1 "abs_dFLUX\t"."$avg_abs_dFLUX\n";
+close OUT1;
+
+#################### find overall RMSD #########################
+
+#open (OUT2, ">>"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/mySeqSTATS.txt");
+#open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/replylog.dat");
+#my @IN2 = <IN2>;
+#for (my $w = 0; $w < scalar @IN2; $w++){ # scan for RMSD
+#			     my $IN2row = $IN2[$w];
+#	             my @IN2row = split(/\s+/, $IN2row); 
+#			     $testheader = $IN2row[0];
+#                 $RMSDtest = $IN2row[2];
+#                 print OUT2 "test "."$testheader\t"."$RMSDtest\n";
+#                 if ($testheader eq "Overall"){print OUT2 "overall_RMSD\t"."$RMSDtest\n";}
+#                 }
+#    
+#close IN2;
+#close OUT2;
 
 ################## adjust KStests.txt for multiple tests ############
 
 sleep(1);
 print " calculating multiple test correction \n\n";
 sleep(1);
-open (OUT, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/adjustKStests.txt") or die "could not create output file\n";
+open (OUT, ">"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/adjustKStests.txt") or die "could not create output file\n";
 print OUT "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
-open (TMP, ">"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/adjustPvalues.txt") or die "could not create output file\n";
+open (TMP, ">"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/adjustPvalues.txt") or die "could not create output file\n";
 open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-print Rinput "data = read.table('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt', header = TRUE)\n"; 
+print Rinput "data = read.table('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStests.txt', header = TRUE)\n"; 
 $posAA = "data\$posAA"; # position on reference structure	
 $refAA = "data\$refAA"; # AA label on reference structure
 $queryAA = "data\$queryAA"; # AA label on query structure
@@ -812,14 +667,14 @@ $pval = "data\$pval"; # p value for KS test
 $signif = "data\$signif"; # significance label
 print Rinput "p.adjust($pval, method = 'bonferroni', n = length($pval))\n";
 print Rinput "p.adjust($pval, method = 'fdr', n = length($pval))\n"; #adjust p values for false discovery rate (i.e. Benjamini-Hochberg procedure)
-print Rinput "write(p.adjust($pval, method = '$mtc', n = length($pval)), './DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/adjustPvalues.txt', sep='\n')\n";
+print Rinput "write(p.adjust($pval, method = '$mtc', n = length($pval)), './DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/adjustPvalues.txt', sep='\n')\n";
 print Rinput "q()\n";# quit R 
 print Rinput "n\n";# save workspace image?
 close Rinput;
 print "\n\n";	
 close TMP;
-open (IN1, "<"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/KStests.txt") or die "could not create output file\n";
-open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/adjustPvalues.txt") or die "could not create output file\n";
+open (IN1, "<"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KStests.txt") or die "could not create output file\n";
+open (IN2, "<"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/adjustPvalues.txt") or die "could not create output file\n";
 my @IN1 = <IN1>;
 my @IN2 = <IN2>;
 my $label_sig = '';
@@ -858,13 +713,14 @@ open (Rinput, "| R --vanilla")||die "could not start R command line\n";
 
 # load plotting libraries
 print Rinput "library(ggplot2)\n";
+print Rinput "library(gridExtra)\n";
 
 # read data into R
-if ($flux_or_corr eq "flux" && $scalingType eq "relative"){print Rinput "data1 = read.table('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVGscaled.txt', header = TRUE)\n";} 
-if ($flux_or_corr eq "flux" && $scalingType eq "absolute"){print Rinput "data1 = read.table('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSfluctuationAVG.txt', header = TRUE)\n";} 
-if ($flux_or_corr eq "corr"){print Rinput "data1 = read.table('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDScorrelationAVG.txt', header = TRUE)\n";} 
-print Rinput "data2 = read.table('./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/adjustKStests.txt', header = TRUE)\n"; 
-if ($flux_or_corr eq "flux"){
+if ($seq_struct_flux eq "flux"){print Rinput "data1 = read.table('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/DROIDSfluctuationAVG.txt', header = TRUE)\n";} 
+print Rinput "data2 = read.table('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/adjustKStests.txt', header = TRUE)\n"; 
+print Rinput "data3 = read.table('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/mySeqSTATS.txt', header = TRUE)\n"; 
+
+if ($seq_struct_flux eq "flux"){
 $pos_ref = "data1\$pos_ref"; # position on reference structure	
 $res_ref = "data1\$res_ref"; # AA label on reference structure
 $res_query = "data1\$res_query"; # AA label on query structure
@@ -873,54 +729,41 @@ $flux_query_avg = "data1\$flux_query_avg"; # avg flux on query structure
 $delta_flux = "data1\$delta_flux"; # signed difference in avg flux
 $abs_delta_flux = "data1\$abs_delta_flux"; # unsigned difference in avg flux
 }
-if ($flux_or_corr eq "corr"){
-$pos_ref = "data1\$pos_ref"; # position on reference structure	
-$res_ref = "data1\$res_ref"; # AA label on reference structure
-$res_query = "data1\$res_query"; # AA label on query structure
-$corr_ref_avg = "data1\$corr_ref_avg"; # avg flux on reference structure
-$corr_query_avg = "data1\$corr_query_avg"; # avg flux on query structure
-$delta_corr = "data1\$delta_corr"; # signed difference in avg flux
-$abs_delta_corr = "data1\$abs_delta_corr"; # unsigned difference in avg flux
-}
 $posAA = "data2\$posAA"; # position on reference structure	
 $refAA = "data2\$refAA"; # AA label on reference structure
 $queryAA = "data2\$queryAA"; # AA label on query structure
 $Dval = "data2\$Dval"; # D value for KS test
 $pval = "data2\$pval"; # p value for KS test
 $signif = "data2\$signif"; # significance label
+
+$label = "data3\$label"; # stat labels
+$value = "data3\$value"; # stat values
 print Rinput "data1\n";
 print Rinput "data2\n";
+print Rinput "data3\n";
+
 # barplot
-if ($flux_or_corr eq "flux"){
+if ($seq_struct_flux eq "flux"){
 print Rinput "d1A = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_ref_avg)\n";
 print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_query_avg)\n";
 print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux)\n";
 print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
 print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
+print Rinput "mytable <- cbind(OVERALL=c('% AA match', 'avg Grantham distance', 'avg |dFLUX|'), STATISTICS=$value)\n";
 print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number)', y = 'avg FLUX') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
 print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'position (residue number)', y = 'direction dFLUX(signed)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
 #print Rinput "myplot3 <- ggplot(data = d3, mapping = aes(x = pos3, y = Y3val, fill=label3r)) + labs(x = 'position (residue number)', y = 'magnitude dFLUX(unsigned)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'), legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
-print Rinput "myplot3 <- ggplot(data = d4, mapping = aes(x = pos4, y = Y4val, fill=Y4label)) + labs(x = 'position (residue number)', y = 'D value (KS test)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
-}
-
-if ($flux_or_corr eq "corr"){
-print Rinput "d1A = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$corr_ref_avg)\n";
-print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$corr_query_avg)\n";
-print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_corr)\n";
-print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_corr)\n";
-print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
-print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number) ref=red query=blue', y = 'avg CORR (ref vs query)') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = 'query PDB')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = 'ref PDB')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
-print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'position (residue number)', y = 'direction dCORR(signed)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
-#print Rinput "myplot3 <- ggplot(data = d3, mapping = aes(x = pos3, y = Y3val, fill=label3r)) + labs(x = 'position (residue number)', y = 'magnitude dCORR(unsigned)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'), legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'))\n";
-print Rinput "myplot3 <- ggplot(data = d4, mapping = aes(x = pos4, y = Y4val, fill=Y4label)) + labs(x = 'position (residue number)', y = 'D value (KS test)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), panel.background = element_rect(fill = 'grey30'))\n";
+print Rinput "myplot3 <- ggplot(data = d4, mapping = aes(x = pos4, y = Y4val, fill=Y4label)) + labs(x = 'position (residue number)', y = 'D value (KS test)') + geom_bar(stat='identity') + theme(axis.title.y = element_text(size=9), legend.title = element_blank(), panel.background = element_rect(fill = 'grey30')) +
+  annotation_custom(tableGrob(mytable, theme = ttheme_minimal(base_size=8, base_colour='white')), xmin=0, ymin=0.2)\n";
+#print Rinput "myplot4 <- ggplot() + annotation_custom(tableGrob(mytable, theme = ttheme_default(base_size=12), xmin=0, ymin=0))\n";
 }
 
 print Rinput "library(grid)\n";
 print Rinput "pushViewport(viewport(layout = grid.layout(3, 1)))\n";
 print Rinput "print(myplot1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))\n";
 print Rinput "print(myplot2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))\n";
-#print Rinput "print(myplot3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))\n";
 print Rinput "print(myplot3, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))\n";
+#print Rinput "print(myplot4, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))\n";
 
 # write to output file and quit R
 print Rinput "q()\n";# quit R 
@@ -931,7 +774,7 @@ print "\n\n";
 print " copying plots\n\n";
 sleep(1);
 my $oldfilename = "Rplots.pdf";
-my $newfilename = "./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/"."DROIDSplot.pdf";
+my $newfilename = "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/"."DROIDSplot.pdf";
 copy($oldfilename, $newfilename);	
 sleep(1);
 if ($scalingType eq "relative"){
@@ -956,7 +799,7 @@ sleep(1);
 if ($scalingType eq "absolute"){print "no scaling factor used\n\n"; sleep(1);}
 print " stats and plotting subroutine is complete\n\n";
 print " close PDF viewer to continue\n\n";
-system "evince ./DROIDS_results_$queryID"."_$refID"."_$flux_or_corr"."_$level_sig"."/DROIDSplot.pdf\n";
+system "evince ./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/DROIDSplot.pdf\n";
 }
 
 ############################################################################################################

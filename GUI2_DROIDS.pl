@@ -80,10 +80,6 @@ my $fluxButton = $mw -> Button(-text => "create atom fluctuation files",
 				-command => \&flux
 				); # Creates a file button
 
-my $corrButton = $mw -> Button(-text => "create atom correlation files", 
-				-command => \&corr
-				); # Creates a file button
-
 my $doneButton = $mw -> Button(-text => "parse / prepare files for DROIDS", 
 				-command => \&done
 				); # Creates a file button
@@ -107,9 +103,6 @@ $doneButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $fluxButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
-$corrButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $infoButton->pack(-side=>"bottom",
@@ -258,15 +251,6 @@ system("cpptraj "."-i ./atomflux_$fileIDr"."_$i.ctl | tee cpptraj_atomflux_$file
 
 ###################################################################################################
 
-sub corr { # launch atom correlation calc
-for (my $i = 0; $i < $runsID; $i++){
-system("cpptraj "."-i ./atomcorr_$fileIDq"."_$i.ctl | tee cpptraj_atomcorr_$fileIDq.txt");
-system("cpptraj "."-i ./atomcorr_$fileIDr"."_$i.ctl | tee cpptraj_atomcorr_$fileIDr.txt");
-  }
-}
-
-###################################################################################################
-
 sub done {
 
 print "Enter residue number at the start of both chains\n";
@@ -349,6 +333,8 @@ close IN1;
 sleep (2);
 
 #################################################################
+print "\n\n calculating AA sequence similarity and Grantham distances\n";
+sleep(2);
 print "\n\n creating vertical alignment files\n";
 sleep(2);
 open(OUT1, ">"."$fileIDr"."_vertalign_ref.aln") or die "could not open output file\n";
@@ -359,10 +345,15 @@ open(OUT3, ">"."$fileIDr"."_vertalign_ref_indexed.aln") or die "could not open o
 print OUT3 "respos\t"."seq_ref\n";
 open(OUT4, ">"."$fileIDq"."_vertalign_query_indexed.aln") or die "could not open output file\n";
 print OUT4 "respos\t"."seq_query\n";
+open(OUT5, ">"."myGranthamDistances.txt") or die "could not open output file\n";
+print OUT5 "respos\t"."distance\n";
 open(IN1, "<"."$fileIDr"."_alignREFMAP.aln") or die "could not open alignment...did you save as (.aln)?\n";
 my @IN1 = <IN1>;
 my $position = 0;
 my $positionINDEX = $startN-1;
+my $AAsame_cnt = 0;
+my $AA_cnt = 0;
+my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
@@ -371,11 +362,14 @@ for (my $i = 0; $i < scalar @IN1; $i++){
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
 															for (my $ii = 0; $ii < length $seq_ref; $ii++){
-																      my $respos = $ii+1;
+																      $gDIST = '';
+																			my $respos = $ii+1;
 																			my $AAref = @seq_ref[$ii]; 
 																			my $AAquery = @seq_query[$ii];
 																			$position = $position+1;
 																			$positionINDEX = $positionINDEX+1;
+																			if ($AAquery eq $AAref){$AAsame_cnt = $AAsame_cnt + 1;}
+																			if ($AAquery ne $AAref || $AAquery eq $AAref){$AA_cnt = $AA_cnt + 1;}
 																			open(IN2, "<"."amino1to3.txt") or die "could not open amino1to3.txt\n";
 																			my @IN2 = <IN2>;
 																			#print "AAref "."$AAref\n";
@@ -388,9 +382,24 @@ for (my $i = 0; $i < scalar @IN1; $i++){
 																					if ($AAone eq $AAquery){print OUT2 "$position\t"."$AAthree\n"}
 																					if ($AAone eq $AAref){print OUT3 "$positionINDEX\t"."$AAthree\n"}
 																					if ($AAone eq $AAquery){print OUT4 "$positionINDEX\t"."$AAthree\n"}
-																					
+																			  	}
+																			# determine Grantham distance
+																			if ($AAquery eq $AAref || $AAquery eq "." || $AAref eq "."){$gDIST = 0;}
+																			if ($AAquery ne $AAref && $AAquery ne "." && $AAref ne "."){
+																			open(IN3, "<"."GranthamScores.txt") or die "could not open amino1to3.txt\n";
+																			my @IN3 = <IN3>;
+																			for (my $iiii = 0; $iiii < scalar @IN3; $iiii++){
+																					my $GDrow = @IN3[$iiii];
+																					my @GDrow = split(/\s+/, $GDrow);
+																					$AAqueryTEST = @GDrow[0]; $AArefTEST = @GDrow[1]; $gDISTtest = @GDrow[2];
+																					if(uc $AAqueryTEST eq $AAquery && uc $AArefTEST eq $AAref){$gDIST = $gDISTtest;} # grantham matrix
+																					elsif(uc $AAqueryTEST eq $AAref && uc $AArefTEST eq $AAquery){$gDIST = $gDISTtest;} # to cover other half of matrix
+																					}
 																			}
-																																						 
+																			
+																			print OUT5 "$position\t"."$gDIST\n";
+																			if ($gDIST > 0) {push (@gDISTS, $gDIST);} # average only non-zero Grantham Distances
+																																																									 
 													        }
 															}
 }
@@ -398,8 +407,27 @@ close OUT1;
 close OUT2;
 close OUT3;
 close OUT4;
+close OUT5;
 close IN1;
 close IN2;
+
+### whole sequence stats
+$statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+           $statSCORE->add_data (@gDISTS);
+					 $avg_gDIST = $statSCORE->mean();
+					 $avg_gDIST = sprintf "%.2f", $avg_gDIST;
+
+$AAseqsim = int(($AAsame_cnt/$AA_cnt+0.0001)*100);
+$AAseq_matchfreq = ($AAsame_cnt/$AA_cnt+0.0001)*100;
+$AAseq_matchfreq = sprintf "%.2f", $AAseq_matchfreq;
+print "\n\nAA sequence similarity = "."$AAseqsim"."%\n";
+print "avg Grantham Distance = "."$avg_gDIST"."\n";
+open(OUT6, ">"."mySeqSTATS.txt") or die "could not open output file\n";
+print OUT6 "label\t"."value\n";
+print OUT6 "AAmatchFreq\t"."$AAseq_matchfreq\n";
+print OUT6 "avgGranthamDist\t"."$avg_gDIST\n";
+close OUT6;
+
 sleep (2);
 
 
@@ -591,349 +619,9 @@ close IN;
 close OUT;
 close OUT2;
 
-sleep(1);
-
-#######################################################################################
-print "  creating query FLUX scaled to avg reference FLUX\n";
-sleep(2);
-# find scaling factor
-@vals = ();
-open(IN, "<"."DROIDSfluctuationAVG.txt") or die "could not open file\n";
-my @IN = <IN>;
-for (my $c = 0; $c < scalar @IN; $c++){
-    my $INrow = $IN[$c];
-    my @INrow = split (/\s+/, $INrow);
-    my $posit = $INrow[0];
-    my $val = $INrow[5];
-    if ($posit ne "pos_ref"){push(@vals, $val);}
-    $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-    $statSCORE->add_data (@vals);
-	$scaling_factor = $statSCORE->mean();
-}
-close IN;
-# created scaled data table
-open(IN, "<"."DROIDSfluctuationAVG.txt") or die "could not open file\n";
-open(OUT, ">"."DROIDSfluctuationAVGscaled.txt")or die "could not create scaled data\n";
-print OUT "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\n";
-my @IN = <IN>;
-for (my $c = 0; $c < scalar @IN; $c++){
-    my $INrow = $IN[$c];
-    my @INrow = split (/\s+/, $INrow);
-    my $pos_ref = $INrow[0];
-    my $res_ref = $INrow[1];
-    my $res_query = $INrow[2];
-    my $flux_ref_avg = $INrow[3];
-    $flux_query_avg = $INrow[4] - $scaling_factor;
-    $delta_flux = ($flux_ref_avg - $flux_query_avg);
-    $abs_delta_flux = abs($delta_flux);
-    if ($pos_ref ne "pos_ref"){print OUT "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
-}
-close IN;
-close OUT;
-
-print "\n\n parsing scaled DROIDSfluctuations by residue\n\n";
-mkdir ("atomfluxscaled") or die "please delete atomflux folder from previous run\n";
-open (IN, "<"."DROIDSfluctuation.txt") or die "could not create input file\n";
-my @IN = <IN>;
-my @REFfluxAvg = ();
-my @QUERYfluxAvg = ();
-for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
-			     my $INrow = $IN[$j];
-	         my @INrow = split(/\s+/, $INrow); 
-			     my $sample = $INrow[0];
-					 my $pos_ref = $INrow[1];
-					 my $res_ref = $INrow[2];
-					 my $res_query = $INrow[3];
-					 my $atomnumber = $INrow[4];
-					 my $atomlabel = $INrow[5];
-					 my $flux_ref = $INrow[6];
-					 my $flux_query = $INrow[7];
-					 $flux_query = $flux_query + $scaling_factor;
-					 push(@REFfluxAvg, $flux_ref);
-					 push(@QUERYfluxAvg, $flux_query);
-					 my $INnextrow = $IN[$j+1];
-	         my @INnextrow = split(/\s+/, $INnextrow); 
-			     my $next_pos = $INnextrow[1];
-					 print OUT "$sample\t"."$pos_ref\t"."$res_ref\t"."$res_query\t"."$atomnumber\t"."$atomlabel\t"."$flux_ref\t"."$flux_query\n";
-					 if ($homology eq "loose"){
-					 if(($j == 1 || $pos_ref ne $next_pos) && $res_query ne "xxx"){  # loose homology = collect all aligned residues  
-           open (OUT, ">"."./atomfluxscaled/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
-           print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					 if ($next_pos eq ''){next;}
-					 }}
-					 if ($homology eq "strict"){
-					 if(($j == 1 || $pos_ref ne $next_pos) && $res_ref eq $res_query && $res_query ne "xxx"){ # strict homology = collect only exact matching residues  
-           open (OUT, ">"."./atomfluxscaled/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
-           print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					 if ($next_pos eq ''){next;}
-					 }}
-					 
-					 
-																
-}
-close IN;
-close OUT;
-
-#########################################################################################
-##########  CORR analysis     ###########################################################
-#########################################################################################
-print "\n\n searching for atom info file = "."cpptraj_atominfo_$fileIDr.txt\n";
-sleep(2);
-open(IN, "<"."cpptraj_atominfo_$fileIDr.txt") or die "could not find atom info file\n";
-my @IN = <IN>;
-print @IN;
-close IN;
-print "\n\n CHOOSE residue name/number to reference all atom correlations
-(e.g. 'leu15' = leucine at 15th residue or 'skip' to avoid CORR analyses)\n\n";
-print " NOTE: this residue should typically coincide with a site of interest\n";
-print "       such as site of mutation or site of important dynamic function\n\n";
-sleep(1);
-print " Chimera will now open the PBD of the reference structure so you can examine what amino acid to choose\n\n";
-print " CLOSE CHIMERA TO CONTINUE\n\n";
-system("$chimera_path"."chimera $fileIDr.pdb\n");
-print " ENTER RESIDUE (e.g. leu15 or skip)\n";
-my $res = <STDIN>;
-chop($res);
-sleep(2);
-if ($res eq "skip"){goto SKIP;}
-print "\n\n trimming atomic correlation files to $res\n\n";
-$residue_number = substr($res, 3, length($res));
-$amino = substr(uc $res, 0, 3);
-print " labels are... "."$res\t"."$amino\t"."$residue_number\n\n";
-print " this may take several minutes\n\n";
-
-for (my $k = 0; $k < $runsID; $k++){  #scan corr data
-	            print "trimming "."corr_$fileIDq"."_$k.txt"." and "."corr_$fileIDr"."_$k.txt\n"; 
-							open(IN1, "<"."corr_$fileIDq"."_$k.txt") or die "could not open corr file for $fileIDq\n";
-              open(OUT1, ">"."corr_trim_$fileIDq"."_$k.txt") or die "could not open corr output for $fileIDq\n";
-							print OUT1 "resnumber\t"."atomnumber\t"."corr\n";
-							open(IN2, "<"."corr_$fileIDr"."_$k.txt") or die "could not open corr file for $fileIDr\n";
-              open(OUT2, ">"."corr_trim_$fileIDr"."_$k.txt") or die "could not open corr output for $fileIDr\n";
-							print OUT2 "resnumber\t"."atomnumber\t"."corr\n";
-							my @IN1 = <IN1>;
-							my @IN2 = <IN2>;
-							for (my $jj = 0; $jj < scalar @IN1; $jj++){ # scan corr files
-								my $IN1row = $IN1[$jj];
-								$IN1row =~ s/^\s+//;# need trim leading whitespace if present 
-	              my @IN1row = split(/\s+/, $IN1row); 
-			          my $pos1 = $IN1row[0];
-								my $pos1 = int($pos1);
-								my $test_resno1 = $IN1row[1];
-								my $test_resno1 = int($test_resno1);
-								my $corr1 = $IN1row[2];
-								my $IN2row = $IN2[$jj];
-								$IN2row =~ s/^\s+//;# need trim leading whitespace if present 
-	              my @IN2row = split(/\s+/, $IN2row); 
-			          my $pos2 = $IN2row[0];
-								my $pos2 = int($pos2);
-								my $test_resno2 = $IN2row[1];
-								my $test_resno2 = int($test_resno2);
-								my $corr2 = $IN2row[2];
-								if ($residue_number == $test_resno1){print OUT1 "$test_resno1\t"."$pos1\t"."$corr1\n";}
-								if ($residue_number == $test_resno2){print OUT2 "$test_resno2\t"."$pos2\t"."$corr2\n";}
-								}
-							  close IN1;
-								close OUT1;
-								close IN2;
-								close OUT2;
-			
-       }
-
-
-########################################################################################
-			 
-print "\n\n masking atomic correlation files to backbone atoms (CA, C, O, N)\n\n";			 
 sleep(2);
 
-for (my $k = 0; $k < $runsID; $k++){  #scan corr data
-print "masking "."corr_trim_$fileIDq"."_$k.txt"." and "."corr_trim_$fileIDr"."_$k.txt\n";
-open(OUT1, ">"."corr_mask_$fileIDq"."_$k.txt") or die "could not open corr output for $fileIDq\n";
-open(OUT2, ">"."corr_mask_$fileIDr"."_$k.txt") or die "could not open corr output for $fileIDr\n";
-open(IN1, "<"."corr_trim_$fileIDq"."_$k.txt") or die "could not open corr input for $fileIDq\n";
-open(IN2, "<"."corr_trim_$fileIDr"."_$k.txt") or die "could not open corr input for $fileIDr\n";
-open(IN3, "<"."atom_residue_list_$fileIDq.txt") or die "could not open atom residue list\n";
-open(IN4, "<"."atom_residue_list_$fileIDr.txt") or die "could not open atom residue list\n";
-my @IN1 = <IN1>;
-my @IN2 = <IN2>;
-my @IN3 = <IN3>;
-my @IN4 = <IN4>;	
-for (my $j = 0; $j < scalar @IN4; $j++){ # scan atom residue list (i.e. atom mask)
-							my $IN3row = $IN3[$j];
-							my @IN3row = split(/\s+/, $IN3row); 
-			        my $IN4row = $IN4[$j];
-							my @IN4row = split(/\s+/, $IN4row); 
-							my $atom_numberQ = $IN3row[0];
-							my $atom_labelQ = $IN3row[1];
-							my $res_numberQ = $IN3row[2];
-							my $res_labelQ = $IN3row[3];
-							my $atom_numberR = $IN4row[0];
-							my $atom_labelR = $IN4row[1];
-							my $res_numberR = $IN4row[2];
-							my $res_labelR = $IN4row[3];							
-							  for (my $ll = 0; $ll < scalar @IN1; $ll++){ # scan corr files
-								my $IN1row = $IN1[$ll];
-								my @IN1row = split(/\s+/, $IN1row); 
-			          my $res1 = $IN1row[0];
-								my $atom1 = $IN1row[1];
-								my $corr1 = $IN1row[2];
-								my $IN2row = $IN2[$ll];
-								my @IN2row = split(/\s+/, $IN2row); 
-			          my $res2 = $IN2row[0];
-								my $atom2 = $IN2row[1];
-								my $corr2 = $IN2row[2];
-								#if ($atom_numberQ == $atom1 && $corr1 =~/\d/){print "Q "."$res1\t"."$atom1\t"."$corr1\n";}
-								#if ($atom_numberR == $atom2 && $corr2 =~/\d/){print "R "."$res2\t"."$atom2\t"."$corr2\n";}
-								if ($atom_numberQ == $atom1 && $corr1 =~/\d/){print OUT1 "$res1\t"."$atom1\t"."$corr1\n";}
-								if ($atom_numberR == $atom2 && $corr2 =~/\d/){print OUT2 "$res2\t"."$atom2\t"."$corr2\n";}
-								}
-							
-							
-							}					
-	
-	close IN1;
-	close IN2;
-	close IN3;
-	close IN4;
-}	
-
-
-
-##############################################################################################################
-print "\n\n collecting atomic correlation values (may take a minute)\n\n";
-sleep(2);
-open (OUT1, ">"."DROIDScorrelation.txt") or die "could not create output file\n";
-print OUT1 "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."corr_ref\t"."corr_query\n";
-open(IN3, "<"."atom_residue_list_$fileIDr.txt") or die "could not open atom_residue_list.txt\n";
-open(IN4, "<"."atom_residue_list_$fileIDq.txt") or die "could not open atom_residue_list.txt\n";
-my @IN3 = <IN3>;
-my @IN4 = <IN4>;
-      for (my $i = 0; $i < scalar @IN3; $i++){ # scan atom type
-			     my $IN3row = $IN3[$i];
-	         my @IN3row = split(/\s+/, $IN3row); 
-			     my $atomnumberR = $IN3row[0]; my $atomlabelR = $IN3row[1]; my $resnumberR = $IN3row[2]; my $reslabelR = $IN3row[3];
-					 my $IN4row = $IN4[$i];
-	         my @IN4row = split(/\s+/, $IN4row); 
-			     my $atomnumberQ = $IN4row[0]; my $atomlabelQ = $IN4row[1]; my $resnumberQ = $IN4row[2]; my $reslabelQ = $IN4row[3];
-					 #print "atom+res REF"."$atomnumberR\t"."$atomlabelR\t"."$resnumberR\t"."$reslabelR\n";	                  
-					 #print "atom+res QUERY"."$atomnumberQ\t"."$atomlabelQ\t"."$resnumberQ\t"."$reslabelQ\n";
-					 # assemble fluctuation data
-			     for (my $ii = 0; $ii < $runsID; $ii++){  #scan flux data
-	            $sample = $ii;
-							open(IN5, "<"."corr_mask_$fileIDq"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDq\n";
-              open(IN6, "<"."corr_mask_$fileIDr"."_$ii.txt") or die "could not open corr_mask_ file for $fileIDr\n";
-	            my @IN5 = <IN5>;
-              my @IN6 = <IN6>;
-			        for (my $iii = 0; $iii < scalar @IN5; $iii++){
-							    my $IN5row = $IN5[$iii];
-									$IN5row =~ s/^\s+//;# need trim leading whitespace if present 
-	                my @IN5row = split(/\s+/, $IN5row);
-									my $Qtest_atom_decimal = $IN5row[1];
-									my $Qtest_atom = int($Qtest_atom_decimal);
-							    #print "Q "."$Qtest_atom\t"."$atomnumberQ\n";
-									if($atomnumberQ == $Qtest_atom){$corr_query = $IN5row[2];}
-							  }	
-							for (my $iii = 0; $iii < scalar @IN6; $iii++){
-									my $IN6row = $IN6[$iii];
-									$IN6row =~ s/^\s+//;# need trim leading whitespace if present 
-	                my @IN6row = split(/\s+/, $IN6row);
-			            my $Rtest_atom_decimal = $IN6row[1];
-									my $Rtest_atom = int($Rtest_atom_decimal);
-									#print "R "."$Rtest_atom\t"."$atomnumberR\n";
-									if($atomnumberR == $Rtest_atom){$corr_ref = $IN6row[2];}
-							  }
-							
-					    if($resnumberR =~/\d/ && $corr_query=~/\d/ && $reslabelQ ne "xxx"){
-							    #print "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."$corr_query\n";
-							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."$corr_query\n";
-							    }
-							if($resnumberR =~/\d/ && $reslabelQ eq "xxx"){
-							    #print "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."NA\n";
-							    print OUT1 "$sample\t"."$resnumberR\t"."$reslabelR\t"."$reslabelQ\t"."$atomnumberR\t"."$atomlabelR\t"."$corr_ref\t"."NA\n";
-							    }
-							
-							
-							} 	
-							
-							close IN5;
-              close IN6;
-							
-					
-							}
-					 
-	
-close IN3;
-close IN4;
-close OUT1;
-
-
-###########################################################################################
-print "\n\n parsing DROIDScorrelations by residue\n\n";
-mkdir ("atomcorr") or die "please delete atomcorr folder from previous run\n";
-open (IN, "<"."DROIDScorrelation.txt") or die "could not create output file\n";
-my @IN = <IN>;
-open (OUT2, ">"."DROIDScorrelationAVG.txt") or die "could not create output file\n";
-print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."corr_ref_avg\t"."corr_query_avg\t"."delta_corr\t"."abs_delta_corr\n";
-my @REFcorrAvg = ();
-my @QUERYcorrAvg = ();
-for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
-			     my $INrow = $IN[$j];
-	         my @INrow = split(/\s+/, $INrow); 
-			     my $sample = $INrow[0];
-					 my $pos_ref = $INrow[1];
-					 my $res_ref = $INrow[2];
-					 my $res_query = $INrow[3];
-					 my $atomnumber = $INrow[4];
-					 my $atomlabel = $INrow[5];
-					 my $corr_ref = $INrow[6];
-					 my $corr_query = $INrow[7];
-					 push(@REFcorrAvg, $corr_ref);
-					 push(@QUERYcorrAvg, $corr_query);
-					 my $INnextrow = $IN[$j+1];
-	         my @INnextrow = split(/\s+/, $INnextrow); 
-			     my $next_pos = $INnextrow[1];
-					 print OUT "$sample\t"."$pos_ref\t"."$res_ref\t"."$res_query\t"."$atomnumber\t"."$atomlabel\t"."$corr_ref\t"."$corr_query\n";
-					 if ($homology eq "loose"){
-					 if(($j == 1 || $pos_ref ne $next_pos) && $res_query ne "xxx"){  # loose homology = collect all aligned residues  
-           open (OUT, ">"."./atomcorr/DROIDScorrelation_$next_pos.txt") or die "could not create output file\n";
-           print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."corr_ref\t"."corr_query\n";
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-           $statSCORE->add_data (@REFcorrAvg);
-					 $corr_ref_avg = $statSCORE->mean();
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-           $statSCORE->add_data (@QUERYcorrAvg);
-					 $corr_query_avg = $statSCORE->mean();
-					 $delta_corr = ($corr_ref_avg - $corr_query_avg);
-					 $abs_delta_corr = abs($corr_ref_avg - $corr_query_avg);
-					 if ($pos_ref =~ m/\d/ && $res_query ne "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."$corr_query_avg\t"."$delta_corr\t"."$abs_delta_corr\n";}
-					 if ($pos_ref =~ m/\d/ && $res_query eq "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."NA\t"."NA\t"."NA\n";}
-					 my @REFcorrAvg = ();
-           my @QUERYcorrAvg = ();
-					 if ($next_pos eq ''){next;}
-					 }}
-					 if ($homology eq "strict"){
-					 if(($j == 1 || $pos_ref ne $next_pos) && $res_ref eq $res_query && $res_query ne "xxx"){ # strict homology = collect only exact matching residues  
-           open (OUT, ">"."./atomcorr/DROIDScorrelation_$next_pos.txt") or die "could not create output file\n";
-           print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."corr_ref\t"."corr_query\n";
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-           $statSCORE->add_data (@REFcorrAvg);
-					 $corr_ref_avg = $statSCORE->mean();
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-           $statSCORE->add_data (@QUERYcorrAvg);
-					 $corr_query_avg = $statSCORE->mean();
-					 $delta_corr = ($corr_ref_avg - $corr_query_avg);
-					 $abs_delta_corr = abs($corr_ref_avg - $corr_query_avg);
-					 if ($pos_ref =~ m/\d/ && $res_query ne "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."$corr_query_avg\t"."$delta_corr\t"."$abs_delta_corr\n";}
-					 if ($pos_ref =~ m/\d/ && $res_query eq "xxx"){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$corr_ref_avg\t"."NA\t"."NA\t"."NA\n";}
-					 my @REFcorrAvg = ();
-           my @QUERYcorrAvg = ();
-					 if ($next_pos eq ''){next;}
-					 }}
-																	
-}
-SKIP:
-close IN;
-close OUT;
-sleep(2);
+##################################################################################################
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 

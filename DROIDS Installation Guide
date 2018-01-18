@@ -117,6 +117,17 @@ $ ./configure -cuda gnu
 $ make install
 $ make test
 
+IMPORTANT - IF YOU PLAN ON RUNNING DROIDS ON 2 GPUs.
+Go to the Amber16/bin file and copy the pmemd.cuda file twice and rename these files
+
+pmemd0.cuda
+pmemd1.cuda
+
+NOTE: do not use SLI connection between cards. The script GUI_START_DROIDS_dualGPU.pl will send
+the protein query simulation to the CUDA device = 0 and the protein reference simulation to CUDA device = 1 
+ 
+
+
 
 NOW YOU MUST MAKE SURE YOUR ENVIRONMENT IS SET
 ...open .bashrc in gedit 

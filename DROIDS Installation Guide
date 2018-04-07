@@ -55,8 +55,8 @@ $ ctl ctrl+alt+F8
 
 ...POST INSTALLATION
 TO SET CUDA ENV in .bashrc file
-$ export CUDA_HOME=/home/usr/local/cuda-8.0
-$ export PATH=$CUDA_HOME/bin:/home/usr/local/cuda-8.0/bin:$PATH
+$ export CUDA_HOME=/usr/local/cuda-8.0
+$ export PATH=$CUDA_HOME/bin:/usr/local/cuda-8.0/bin:$PATH
 $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${AMBERHOME}/lib:$CUDA_HOME/lib64:$CUDA_H$
 
 ...CHECK YOUR GPU - here you should see your GPU hardware details

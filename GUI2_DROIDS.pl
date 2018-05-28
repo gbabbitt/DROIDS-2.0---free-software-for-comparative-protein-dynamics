@@ -556,8 +556,8 @@ open (IN, "<"."DROIDSfluctuation.txt") or die "could not create input file\n";
 my @IN = <IN>;
 open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file\n";
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\n";
-my @REFfluxAvg = ();
-my @QUERYfluxAvg = ();
+@REFfluxAvg = ();
+@QUERYfluxAvg = ();
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -580,6 +580,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_query ne "xxx"){  # loose homology = collect all aligned residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
+					 if ($pos_ref =~ m/\d/ && $j>1){
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
            $statSCORE->add_data (@REFfluxAvg);
 					 $flux_ref_avg = $statSCORE->mean();
@@ -588,9 +589,10 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $flux_query_avg = $statSCORE->mean();
 					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
 					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 if ($pos_ref =~ m/\d/ && $j>1){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
-					 my @REFfluxAvg = ();
-           my @QUERYfluxAvg = ();
+					 print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";
+					 @REFfluxAvg = ();
+           @QUERYfluxAvg = ();
+					 }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 					 
@@ -598,6 +600,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_ref eq $res_query && $res_query ne "xxx"){ # strict homology = collect only exact matching residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
+					 if ($pos_ref =~ m/\d/ && $j>1){
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
            $statSCORE->add_data (@REFfluxAvg);
 					 $flux_ref_avg = $statSCORE->mean();
@@ -606,9 +609,10 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $flux_query_avg = $statSCORE->mean();
 					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
 					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 if ($pos_ref =~ m/\d/ && $j>1){print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";}
-					 my @REFfluxAvg = ();
-           my @QUERYfluxAvg = ();
+					 print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\n";
+					 @REFfluxAvg = ();
+           @QUERYfluxAvg = ();
+					 }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 

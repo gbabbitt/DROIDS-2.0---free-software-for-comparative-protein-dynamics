@@ -94,10 +94,9 @@ if colorType == "wo":
 
 mid_color = ""
 mid_value = ""
-if attr == "delta":
+if attr == "delta" or attr == "deltaKL":
  mid_color = "white"
  mid_value = (float(min_value) + float(max_value))/2
-
 rep_key = ""
 
 mol = chimera.openModels.open(pdb_file)[0] # Opens molecule

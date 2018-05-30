@@ -4,6 +4,21 @@
 use File::Copy;
 use List::Util qw(shuffle);
 
+# specify the path to working directory for teLeap here
+open(IN, "<"."paths.ctl") or die "could not find paths.txt file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+	 my @INrow = split (/\s+/, $INrow);
+	 my $header = @INrow[0];
+	 my $path = @INrow[1];
+	 if ($header eq "teleap_path"){$teleap_path = $path;}
+}
+close IN;
+print "path to teLeap .exe\t"."$teleap_path\n";
+
+###########################################################
+
 print "control file inputs\n\n";
 
 open(IN, "<"."MDq.ctl") or die "could not find MD.ctl control file\n";
@@ -66,7 +81,7 @@ if (-e "$protein_label.pdb") { print "$protein_label.pdb found\n"; }
 # Protein: Prepare the input file for tleap 
 ####################################################################
 open(LEAP_PROTEIN, ">"."$protein_label.bat") or die "could not open LEAP file\n";
-	print LEAP_PROTEIN "source /home/greg/Desktop/amber16/dat/leap/cmd/leaprc.$forcefield\n";
+	print LEAP_PROTEIN "source "."$teleap_path"."$forcefield\n";
 	print LEAP_PROTEIN "source leaprc.water.tip3p\n";
 	print LEAP_PROTEIN "protein$protein_label = loadpdb $protein_label.pdb\n";
 	print LEAP_PROTEIN "saveamberparm protein$protein_label vac_$protein_label.prmtop vac_$protein_label.inpcrd\n";

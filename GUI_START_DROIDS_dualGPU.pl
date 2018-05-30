@@ -6,59 +6,6 @@ use feature ":5.10";
 # specify the path to working directory for Chimera here
 my $chimera_path = "/opt/UCSF/Chimera64-1.11/bin/";
 
-#### Introductory Message #############
-
-print "\n\nWelcome to DROIDS - a pipeline for evolutionary and functional comparison
-of biomolecular dynamics.  Before you start you should collect two .pdb files
-you want to compare and move them into the DROIDS folder.  Naming convention
-should be PDB_ID.pdb. Be sure to check that they are 'sensibly' homologous in
-that they differ only in with regards to the effect you want to observe (i.e.
-sequence difference, solvent or binding state).  Edit in Chimera if neccessary.
-Remove crystalographic waters, mirrored structures or unusual ligands. Atypical
-Amber preparations (e.g. beyond adding H and missing atoms using teleap) can be
-done at the command line using Antechamber for further ligand library prep
-
-NOTE: this program assumes .pdb files are completely ready for teLeap
-
-Dependencies - perl, perl module (Descriptive), perl-tk, python, python-tk,
-  python-gi, R-base, R-dev, R package(ggplot2), USCF Chimera 1.11, evince(pdf viewer)
-  Amber16 (licensed from Univ of Ca; visit ambermd.org), Ambertools16
- (tested on Linux Mint 18.1 Cinnamon 64-bit Kernel 4.4.0-53-generic)
-
-BabbittLab - Rochester Inst. Technol. Rochester NY
-
-DROIDS 1.0               Copyright 2017 G.A. Babbitt.\n\n";
-
-
-print "continue to GPL license? (y/n)\n";
-my $go = <STDIN>;
-chop($go);
-
-if ($go eq "n") {exit;}
-
-print " 
-
-    DROIDS 1.0 is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    DROIDS 1.0 is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with DROIDS 1.0.  If not, see <http://www.gnu.org/licenses/>.
-
-    Visit us on GitHub. \n\n";
-
-print "continue to GUI ? (y/n)\n";
-my $go = <STDIN>;
-chop($go);
-
-if ($go eq "n") {exit;}
-
 #### This creates a GUI to write the control files needed for the GPU accelerated pmemd.cuda pipeline ####
 
 #### Declare variables ####

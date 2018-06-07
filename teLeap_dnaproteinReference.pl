@@ -31,6 +31,7 @@ for (my $c = 0; $c <= scalar @IN; $c++){
     print "$header\t"."$value\n";
     if ($header eq "PDB_ID") { $PDB_ID = $value;}
     if ($header eq "Force_Field") { $Force_Field = $value;}
+    if ($header eq "DNA_Field") { $DNA_Field = $value;}
     if ($header eq "Number_Runs") { $Number_Runs = $value;}
     if ($header eq "Heating_Time") { $Heating_Time = $value;}
     if ($header eq "Equilibration_Time") { $Equilibration_Time = $value;}
@@ -67,7 +68,8 @@ my $num_runs = $Number_Runs; # Number of repeated production runs
 my $len_prod = $Production_Time; # Length of each production run in fs (nstlim value)
 my $len_eq = $Equilibration_Time; # Length of equilibration run in fs
 my $len_heat = $Heating_Time; # Length of heat run in fs
-my $forcefield = $Force_Field; # specify AMBER forcefield
+my $proteinfield = $Force_Field; # specify AMBER protein forcefield
+my $dnafield = $DNA_Field; # specify AMBER DNA forcefield
 
 =pod
 
@@ -80,10 +82,12 @@ if (-e "$protein_label.pdb") { print "$protein_label.pdb found\n"; }
 ####################################################################
 # Protein: Prepare the input file for tleap 
 ####################################################################
+
 open(LEAP_PROTEIN, ">"."$protein_label.bat") or die "could not open LEAP file\n";
-	print LEAP_PROTEIN "source "."$teleap_path"."$forcefield\n";
+	print LEAP_PROTEIN "source "."$teleap_path"."$proteinfield\n";
+     print LEAP_PROTEIN "source "."$teleap_path"."$dnafield\n";
 	print LEAP_PROTEIN "source "."$teleap_path"."leaprc.water.tip3p\n";
-	print LEAP_PROTEIN "protein$protein_label = loadpdb $protein_label.pdb\n";
+     print LEAP_PROTEIN "protein$protein_label = loadpdb $protein_label.pdb\n";
 	print LEAP_PROTEIN "saveamberparm protein$protein_label vac_$protein_label.prmtop vac_$protein_label.inpcrd\n";
 	print LEAP_PROTEIN "addions protein$protein_label Na+ 0\n"; # only use to charge or neutralize explicit solvent
 	print LEAP_PROTEIN "saveamberparm protein$protein_label ion_$protein_label.prmtop ion_$protein_label.inpcrd\n";
@@ -101,6 +105,7 @@ sleep(1);
 open(TLEAP_PROTEIN, '|-', "tleap -f $protein_label.bat");
 	print<TLEAP_PROTEIN>;
 close TLEAP_PROTEIN;
+
 
 sleep(1);
 

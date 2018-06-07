@@ -849,6 +849,7 @@ open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\t"."KLdivergence\n";
 @REFfluxAvg = ();
 @QUERYfluxAvg = ();
+$KL = 0;
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -998,7 +999,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSsp.pl\n";	
+system "perl GUI_STATS_DROIDSsp1.pl\n";	
 }
 
 ##################################################################################################

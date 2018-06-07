@@ -173,7 +173,7 @@ MainLoop; # Allows Window to Pop Up
 ########################################################################################
 sub stop {exit;}
 ########################################################################################
-sub next {system "perl GUI_IMAGE_DROIDSep.pl";}
+sub next {system "perl GUI_IMAGE_DROIDSsp2.pl";}
 ########################################################################################
 sub ctl {
 # make control file for DROIDS	

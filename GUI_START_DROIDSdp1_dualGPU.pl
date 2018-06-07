@@ -102,31 +102,31 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
-	
+	my $QfileFrame = $pdbFrame->Frame();
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID without DNA (e.g. 1ytb_unbound) : ");
+		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$fileIDq
+					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 1ubq) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_bound) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-	my $subsFrame = $pdbFrame->Frame();
-		my $subsLabel = $subsFrame->Label(-text=>"amino acid to substitute (e.g. TYR) : ");
-		my $subsEntry = $subsFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsTYPE
-					);
-     my $posFrame = $pdbFrame->Frame();
-		my $posLabel = $posFrame->Label(-text=>"amino acid position to substitute (e.g. 76) : ");
-		my $posEntry = $posFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsPOS
-					);
+		
 	my $forceFrame = $pdbFrame->Frame();
-		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
+		my $forceLabel = $forceFrame->Label(-text=>"protein force field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$forceID
 					);
+      my $dforceFrame = $pdbFrame->Frame();
+		my $dforceLabel = $dforceFrame->Label(-text=>"DNA force field (e.g. leaprc.DNA.OL15): ");
+		my $dforceEntry = $dforceFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$dforceID
+					);    
 	my $runsFrame = $pdbFrame->Frame();
 		my $runsLabel = $runsFrame->Label(-text=>"number of repeated MD sample runs: ");
 		my $runsEntry = $runsFrame->Entry(-borderwidth => 2,
@@ -164,9 +164,7 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-my $mutButton = $mw -> Button(-text => "create mutant PDB file", 
-				-command => \&mutate
-				); # Creates a mutation file  button
+
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
@@ -217,9 +215,6 @@ $alignButton->pack(-side=>"bottom",
 $reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$mutButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
 $killButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -230,15 +225,14 @@ $controlButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 
-
+$QfileLabel->pack(-side=>"left");
+$QfileEntry->pack(-side=>"left");
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
-$subsLabel->pack(-side=>"left");
-$subsEntry->pack(-side=>"left");
-$posLabel->pack(-side=>"left");
-$posEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
+$dforceLabel->pack(-side=>"left");
+$dforceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
 $runsEntry->pack(-side=>"left");
 $lengthLabel->pack(-side=>"left");
@@ -248,11 +242,11 @@ $startEntry->pack(-side=>"left");
 
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
+$dforceFrame->pack(-side=>"top",
+		-anchor=>"e");
+$QfileFrame->pack(-side=>"top",
+		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
-		-anchor=>"e");
-$subsFrame->pack(-side=>"top",
-		-anchor=>"e");
-$posFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -290,11 +284,12 @@ sub control { # Write a control file and then call appropriate scripts that refe
 	$cutoffValueEqFS = $cutoffValueEq*1000000;
 	$cutoffValueProdFS = $cutoffValueProd*1000;
 
-### make query protein control file ###	
+### make qury protein control file ###	
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
 Force_Field\t$forceID\t# AMBER force field to use in MD runs
+DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
@@ -302,11 +297,12 @@ Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
 Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
 close $ctlFile1;
-### make reference protein control file ###	
+### make qury protein control file ###	
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
 Force_Field\t$forceID\t# AMBER force field to use in MD runs
+DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
@@ -414,31 +410,12 @@ print("DROIDS ctl file is made\n");
 
 }
 
-#####################################################################################################
-
-sub mutate{
-# create mutate_protein.cmd script
-open(MUT, ">"."mutate_protein.cmd");
-print MUT "open $fileIDr".".pdb\n";
-print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
-print MUT "write 0 $fileIDr"."mut.pdb\n";
-close MUT;
-
-# run mutate_protein.cmd script
-system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
-print "\nmutant protein PDB file was created\n";
-
-# rerun ctl files again after specifying mutant as new query
-$fileIDq = "$fileIDr"."mut";
-control;
-print "\nall control files are updated\n\n";
-}
 
 #####################################################################################################
 
 sub teLeap { # create topology and coordinate files 
-system "perl teLeap_proteinQuery.pl\n";
-system "perl teLeap_proteinReference.pl\n";
+system "perl teLeap_dnaproteinQuery.pl\n";
+system "perl teLeap_dnaproteinReference.pl\n";
 my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
 my $filecheck2 = "vac_".$fileIDr."REDUCED.prmtop";
 my $filecheck3 = "wat_".$fileIDq."REDUCED.inpcrd";
@@ -583,8 +560,7 @@ my $position = 0;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
-	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -631,8 +607,7 @@ my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
-	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -824,18 +799,8 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-## choose homology
-#my $homology = <STDIN>;
-#chop($homology);
-
-#$homology = "loose";
-#print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
-#sleep(2);
-
-$homology = "strict";
-print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
-sleep(2);
-
+my $homology = <STDIN>;
+chop($homology);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -849,6 +814,7 @@ open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\t"."KLdivergence\n";
 @REFfluxAvg = ();
 @QUERYfluxAvg = ();
+$KL = 0;
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -998,7 +964,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSsp.pl\n";	
+system "perl GUI_STATS_DROIDSdp1.pl\n";	
 }
 
 ##################################################################################################

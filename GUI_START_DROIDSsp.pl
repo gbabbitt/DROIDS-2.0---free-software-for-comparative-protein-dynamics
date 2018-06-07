@@ -103,19 +103,25 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
-	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID query (e.g. 1ubq) : ");
-		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$fileIDq
-					);
+	
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 2ubq) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 1ubq) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-		
+	my $subsFrame = $pdbFrame->Frame();
+		my $subsLabel = $subsFrame->Label(-text=>"amino acid to substitute (e.g. TYR) : ");
+		my $subsEntry = $subsFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$subsTYPE
+					);
+     my $posFrame = $pdbFrame->Frame();
+		my $posLabel = $posFrame->Label(-text=>"amino acid position to substitute (e.g. 76) : ");
+		my $posEntry = $posFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$subsPOS
+					);	
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -159,7 +165,9 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-
+my $mutButton = $mw -> Button(-text => "create mutant PDB file", 
+				-command => \&mutate
+				); # Creates a mutation file  button
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
@@ -209,6 +217,9 @@ $alignButton->pack(-side=>"bottom",
 $reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$mutButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $killButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -219,10 +230,13 @@ $controlButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 
-$QfileLabel->pack(-side=>"left");
-$QfileEntry->pack(-side=>"left");
+
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
+$subsLabel->pack(-side=>"left");
+$subsEntry->pack(-side=>"left");
+$posLabel->pack(-side=>"left");
+$posEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
@@ -234,9 +248,11 @@ $startEntry->pack(-side=>"left");
 
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
-$QfileFrame->pack(-side=>"top",
-		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
+		-anchor=>"e");
+$subsFrame->pack(-side=>"top",
+		-anchor=>"e");
+$posFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -399,6 +415,25 @@ print("DROIDS ctl file is made\n");
 
 }
 
+#####################################################################################################
+
+sub mutate{
+# create mutate_protein.cmd script
+open(MUT, ">"."mutate_protein.cmd");
+print MUT "open $fileIDr".".pdb\n";
+print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+print MUT "write 0 $fileIDr"."mut.pdb\n";
+close MUT;
+
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
+print "\nmutant protein PDB file was created\n";
+
+# rerun ctl files again after specifying mutant as new query
+$fileIDq = "$fileIDr"."mut";
+control;
+print "\nall control files are updated\n\n";
+}
 
 #####################################################################################################
 
@@ -555,7 +590,8 @@ my $position = 0;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+     my $target = $fileIDr."REDUCED";
+	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -602,7 +638,8 @@ my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+     my $target = $fileIDr."REDUCED";
+	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -794,8 +831,17 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-my $homology = <STDIN>;
-chop($homology);
+## choose homology
+#my $homology = <STDIN>;
+#chop($homology);
+
+#$homology = "loose";
+#print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
+#sleep(2);
+
+$homology = "strict";
+print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
+sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";

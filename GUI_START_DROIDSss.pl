@@ -17,6 +17,7 @@ for (my $i = 0; $i < scalar @IN; $i++){
 }
 close IN;
 print "path to Chimera .exe\t"."$chimera_path\n";
+#my $chimera_path = "/opt/UCSF/Chimera64-1.11/bin/";
 
 #### This creates a GUI to write the control files needed for the GPU accelerated pmemd.cuda pipeline ####
 
@@ -102,25 +103,19 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
-	
+	#my $QfileFrame = $pdbFrame->Frame();
+	#	my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID query (e.g. 1ubq) : ");
+	#	my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
+	#				-relief => "groove",
+	#				-textvariable=>\$fileIDq
+	#				);
 	my $RfileFrame = $pdbFrame->Frame();
 		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 1ubq) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-	my $subsFrame = $pdbFrame->Frame();
-		my $subsLabel = $subsFrame->Label(-text=>"amino acid to substitute (e.g. TYR) : ");
-		my $subsEntry = $subsFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsTYPE
-					);
-     my $posFrame = $pdbFrame->Frame();
-		my $posLabel = $posFrame->Label(-text=>"amino acid position to substitute (e.g. 76) : ");
-		my $posEntry = $posFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsPOS
-					);
+		
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -138,14 +133,14 @@ my $pdbFrame = $mw->Frame();
 		my $lengthEntry = $lengthFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$lengthID
-					);
+					);    
 	my $startFrame = $pdbFrame->Frame();
 		my $startLabel = $startFrame->Label(-text=>"start numbering AA's on chain at (e.g. 1): ");
 		my $startEntry = $startFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$startN
 					);
-          
+          	
 # Buttons
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
@@ -164,9 +159,7 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-my $mutButton = $mw -> Button(-text => "create mutant PDB file", 
-				-command => \&mutate
-				); # Creates a mutation file  button
+
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
@@ -190,7 +183,6 @@ my $doneButton = $mw -> Button(-text => "parse / prepare files for DROIDS",
 my $stopButton = $mw -> Button(-text => "exit DROIDS", 
 				-command => \&stop
 				); # Creates a file button
-
 
 #### Organize GUI Layout ####
 $stopButton->pack(-side=>"bottom",
@@ -217,9 +209,6 @@ $alignButton->pack(-side=>"bottom",
 $reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$mutButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
 $killButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -230,13 +219,10 @@ $controlButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 
-
+#$QfileLabel->pack(-side=>"left");
+#$QfileEntry->pack(-side=>"left");
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
-$subsLabel->pack(-side=>"left");
-$subsEntry->pack(-side=>"left");
-$posLabel->pack(-side=>"left");
-$posEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
@@ -248,11 +234,9 @@ $startEntry->pack(-side=>"left");
 
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
+#$QfileFrame->pack(-side=>"top",
+#		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
-		-anchor=>"e");
-$subsFrame->pack(-side=>"top",
-		-anchor=>"e");
-$posFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -281,6 +265,7 @@ MainLoop; # Allows Window to Pop Up
 ########################################################################################
 sub stop {exit;}
 ########################################################################################
+
 sub control { # Write a control file and then call appropriate scripts that reference control file
 	if ($solvType eq "im") {$repStr = "implicit";}
 	if ($solvType eq "ex") {$repStr = "explicit";}
@@ -290,7 +275,12 @@ sub control { # Write a control file and then call appropriate scripts that refe
 	$cutoffValueEqFS = $cutoffValueEq*1000000;
 	$cutoffValueProdFS = $cutoffValueProd*1000;
 
-### make query protein control file ###	
+# create second PDB file for self-similar analysis
+copy($fileIDr.".pdb", $fileIDr."copy.pdb");
+$fileIDq = $fileIDr."copy"; # redefine label  
+     
+     
+### make qury protein control file ###	
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
@@ -302,7 +292,7 @@ Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
 Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
 close $ctlFile1;
-### make reference protein control file ###	
+### make qury protein control file ###	
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
@@ -400,8 +390,8 @@ print("Making ctl file...\n");
 	$testStr = "flux"; $testStrLong = "fluctuation";  # file and folder labels
 	
 open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
-print CTL "query\t"."$fileIDq\t # Protein Data Bank ID for query structure\n";
-print CTL "reference\t"."$fileIDr\t # Protein Data Bank ID for reference structure (or neutral model)\n";
+print CTL "query\t"."$queryID\t # Protein Data Bank ID for query structure\n";
+print CTL "reference\t"."$refID\t # Protein Data Bank ID for reference structure (or neutral model)\n";
 print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
 print CTL "start\t"."$startN\t # number of AA at start of chain\n";
 #print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
@@ -414,29 +404,12 @@ print("DROIDS ctl file is made\n");
 
 }
 
-#####################################################################################################
-
-sub mutate{
-# create mutate_protein.cmd script
-open(MUT, ">"."mutate_protein.cmd");
-print MUT "open $fileIDr".".pdb\n";
-print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
-print MUT "write 0 $fileIDr"."mut.pdb\n";
-close MUT;
-
-# run mutate_protein.cmd script
-system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
-print "\nmutant protein PDB file was created\n";
-
-# rerun ctl files again after specifying mutant as new query
-$fileIDq = "$fileIDr"."mut";
-control;
-print "\nall control files are updated\n\n";
-}
 
 #####################################################################################################
 
 sub teLeap { # create topology and coordinate files 
+system "perl teLeap_proteinQuery.pl\n";
+system "perl teLeap_proteinReference.pl\n";
 system "perl teLeap_proteinQuery.pl\n";
 system "perl teLeap_proteinReference.pl\n";
 my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
@@ -461,11 +434,8 @@ system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 ######################################################################################################
 
 sub launch { # launch MD run
-system "x-terminal-emulator -e perl MD_proteinQuery_dualGPU.pl\n";
-sleep(2);
-system "x-terminal-emulator -e perl MD_proteinReference_dualGPU.pl\n";
-print "\n\n";
-print "MD SIMULATIONS ARE COMPLETED WHEN TERMINALS CLOSE\n\n";
+system "perl MD_proteinQuery.pl\n";
+system "perl MD_proteinReference.pl\n";
 }
 
 ######################################################################################################
@@ -480,6 +450,14 @@ sub surv {
 	### open job survalience terminals ######
 system "x-terminal-emulator -e top\n";
 system "x-terminal-emulator -e nvidia-smi -l 20\n";
+}
+
+######################################################################################################
+
+sub skip{ # skip MD if .nc files are already generated
+print "  skipping MD simulation and going straight to vector trajectory analysis\n\n";	
+sleep (1);
+system "perl GUI_STATS_DROIDSss.pl\n";	
 }
 
 ######################################################################################################
@@ -499,7 +477,6 @@ sleep(1);
 print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
 system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n");
-
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
 sleep(0.5);
@@ -828,14 +805,13 @@ print "          (this will NOT allow sites of mutations to be visualized later)
 #my $homology = <STDIN>;
 #chop($homology);
 
-#$homology = "loose";
-#print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
-#sleep(2);
-
-$homology = "strict";
-print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
+$homology = "loose";
+print "\nHOMOLOGY DOES NOT APPLY FOR THIS ANALYSIS\n\n";
 sleep(2);
 
+#$homology = "strict";
+#print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
+#sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -849,6 +825,7 @@ open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\t"."KLdivergence\n";
 @REFfluxAvg = ();
 @QUERYfluxAvg = ();
+$KL = 0;
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -871,60 +848,55 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_query ne "xxx"){  # loose homology = collect all aligned residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					                         
-                          if ($pos_ref =~ m/\d/ && $j>1){
-                              $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-                              $statSCORE->add_data (@REFfluxAvg);
-					     $flux_ref_avg = $statSCORE->mean();
-                              #$flux_ref_n = $statSCORE->count();
-                              #print "flux_ref_n\t"."$flux_ref_n\n";
-					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-                              $statSCORE->add_data (@QUERYfluxAvg);
-					     $flux_query_avg = $statSCORE->mean();
-                              #$flux_query_n = $statSCORE->count();
-                              #print "flux_query_n\t"."$flux_query_n\n";
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-                              # calculate JS divergence
-                              open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
-                              print TMP1 "flux_ref\t"."flux_query\n";
-                              for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
-                              close TMP1;
-                              open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
-                              close TMP2;
-                              open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-                              print Rinput "library('FNN')\n";
-                              print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
-                              $flux_ref = "data\$flux_ref"; # flux on reference residue
-                              $flux_query = "data\$flux_query"; # flux on query residue
-                              print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
-                              #print Rinput "print(d1)\n";
-                              print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
-                              print Rinput "print(myKL[10])\n";
-                              print Rinput "sink('flux_values_KL.txt')\n";
-                              print Rinput "print(myKL[10])\n";
-                              print Rinput "sink()\n";
-                              # write to output file and quit R
-                              print Rinput "q()\n";# quit R 
-                              print Rinput "n\n";# save workspace image?
-                              close Rinput;
-                              open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
-                              my @TMP3 = <TMP3>;
-                              for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
-                              $TMP3row = $TMP3[$tt];
-                              @TMP3row = split (/\s+/, $TMP3row);
-                              $header = $TMP3row[0];
-                              $value = $TMP3row[1];
-                              #print "$header\t"."$value\n";
-                              if ($header eq "[1]"){$KL = $value;}
-                              }
-                              if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
-                              print "my KL is "."$KL\n";
-                              close TMP3;
-                              print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
-					     @REFfluxAvg = ();
-                              @QUERYfluxAvg = ();
-                              }
+					 if ($pos_ref =~ m/\d/ && $j>1){
+                          $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+                          $statSCORE->add_data (@REFfluxAvg);
+					 $flux_ref_avg = $statSCORE->mean();
+					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
+                          $statSCORE->add_data (@QUERYfluxAvg);
+					 $flux_query_avg = $statSCORE->mean();
+					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
+					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 # calculate JS divergence
+                          open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
+                          print TMP1 "flux_ref\t"."flux_query\n";
+                          for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
+                          close TMP1;
+                          open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
+                          close TMP2;
+                          open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+                          print Rinput "library('FNN')\n";
+                          print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
+                          $flux_ref = "data\$flux_ref"; # flux on reference residue
+                          $flux_query = "data\$flux_query"; # flux on query residue
+                          print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
+                          #print Rinput "print(d1)\n";
+                          print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
+                          print Rinput "print(myKL[10])\n";
+                          print Rinput "sink('flux_values_KL.txt')\n";
+                          print Rinput "print(myKL[10])\n";
+                          print Rinput "sink()\n";
+                          # write to output file and quit R
+                          print Rinput "q()\n";# quit R 
+                          print Rinput "n\n";# save workspace image?
+                          close Rinput;
+                          open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
+                          my @TMP3 = <TMP3>;
+                          for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
+                          $TMP3row = $TMP3[$tt];
+                          @TMP3row = split (/\s+/, $TMP3row);
+                          $header = $TMP3row[0];
+                          $value = $TMP3row[1];
+                          #print "$header\t"."$value\n";
+                          if ($header eq "[1]"){$KL = $value;}
+                          }
+                          if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
+                          print "my KL is "."$KL\n";
+                          close TMP3;
+                          print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
+					 my @REFfluxAvg = ();
+                          my @QUERYfluxAvg = ();
+                          }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 					 
@@ -932,56 +904,55 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_ref eq $res_query && $res_query ne "xxx"){ # strict homology = collect only exact matching residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					         
-                          if ($pos_ref =~ m/\d/ && $j>1){
-                              $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-                              $statSCORE->add_data (@REFfluxAvg);
-					     $flux_ref_avg = $statSCORE->mean();
-					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-                              $statSCORE->add_data (@QUERYfluxAvg);
-					     $flux_query_avg = $statSCORE->mean();
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					     # calculate JS divergence
-                              open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
-                              print TMP1 "flux_ref\t"."flux_query\n";
-                              for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
-                              close TMP1;
-                              open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
-                              close TMP2;
-                              open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-                              print Rinput "library('FNN')\n";
-                              print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
-                              $flux_ref = "data\$flux_ref"; # flux on reference residue
-                              $flux_query = "data\$flux_query"; # flux on query residue
-                              print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
-                              #print Rinput "print(d1)\n";
-                              print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
-                              print Rinput "print(myKL[10])\n";
-                              print Rinput "sink('flux_values_KL.txt')\n";
-                              print Rinput "print(myKL[10])\n";
-                              print Rinput "sink()\n";
-                              # write to output file and quit R
-                              print Rinput "q()\n";# quit R 
-                              print Rinput "n\n";# save workspace image?
-                              close Rinput;
-                              open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
-                              my @TMP3 = <TMP3>;
-                              for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
-                              $TMP3row = $TMP3[$tt];
-                              @TMP3row = split (/\s+/, $TMP3row);
-                              $header = $TMP3row[0];
-                              $value = $TMP3row[1];
-                              #print "$header\t"."$value\n";
-                              if ($header eq "[1]"){$KL = $value;}
-                              }
-                              if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
-                              print "my KL is "."$KL\n";
-                              close TMP3;
-                              print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
-					     @REFfluxAvg = ();
-                              @QUERYfluxAvg = ();
-                              }
+					 if ($pos_ref =~ m/\d/ && $j>1){
+                          $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+                          $statSCORE->add_data (@REFfluxAvg);
+					 $flux_ref_avg = $statSCORE->mean();
+					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
+                          $statSCORE->add_data (@QUERYfluxAvg);
+					 $flux_query_avg = $statSCORE->mean();
+					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
+					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 # calculate JS divergence
+                          open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
+                          print TMP1 "flux_ref\t"."flux_query\n";
+                          for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
+                          close TMP1;
+                          open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
+                          close TMP2;
+                          open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+                          print Rinput "library('FNN')\n";
+                          print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
+                          $flux_ref = "data\$flux_ref"; # flux on reference residue
+                          $flux_query = "data\$flux_query"; # flux on query residue
+                          print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
+                          #print Rinput "print(d1)\n";
+                          print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
+                          print Rinput "print(myKL[10])\n";
+                          print Rinput "sink('flux_values_KL.txt')\n";
+                          print Rinput "print(myKL[10])\n";
+                          print Rinput "sink()\n";
+                          # write to output file and quit R
+                          print Rinput "q()\n";# quit R 
+                          print Rinput "n\n";# save workspace image?
+                          close Rinput;
+                          open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
+                          my @TMP3 = <TMP3>;
+                          for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
+                          $TMP3row = $TMP3[$tt];
+                          @TMP3row = split (/\s+/, $TMP3row);
+                          $header = $TMP3row[0];
+                          $value = $TMP3row[1];
+                          #print "$header\t"."$value\n";
+                          if ($header eq "[1]"){$KL = $value;}
+                          }
+                          if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
+                          print "my KL is "."$KL\n";
+                          close TMP3;
+                          print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
+					 @REFfluxAvg = ();
+                          @QUERYfluxAvg = ();
+                          }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 
@@ -998,7 +969,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSsp.pl\n";	
+system "perl GUI_STATS_DROIDSss.pl\n";	
 }
 
 ##################################################################################################

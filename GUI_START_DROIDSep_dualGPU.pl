@@ -103,13 +103,13 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID query (e.g. 1ubq) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with epigenetic modification (e.g. 1ubq) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 2ubq) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID without epigenetic modification (e.g. 2ubq) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
@@ -787,8 +787,17 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-my $homology = <STDIN>;
-chop($homology);
+## choose homology
+#my $homology = <STDIN>;
+#chop($homology);
+
+$homology = "loose";
+print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
+sleep(2);
+
+#$homology = "strict";
+#print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
+#sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -802,6 +811,7 @@ open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\t"."KLdivergence\n";
 @REFfluxAvg = ();
 @QUERYfluxAvg = ();
+$KL = 0;
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -951,7 +961,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSsp.pl\n";	
+system "perl GUI_STATS_DROIDSep.pl\n";	
 }
 
 ##################################################################################################

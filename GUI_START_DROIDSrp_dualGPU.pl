@@ -109,18 +109,6 @@ my $pdbFrame = $mw->Frame();
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-	my $subsFrame = $pdbFrame->Frame();
-		my $subsLabel = $subsFrame->Label(-text=>"amino acid to substitute (e.g. TYR) : ");
-		my $subsEntry = $subsFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsTYPE
-					);
-     my $posFrame = $pdbFrame->Frame();
-		my $posLabel = $posFrame->Label(-text=>"amino acid position to substitute (e.g. 76) : ");
-		my $posEntry = $posFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$subsPOS
-					);
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -150,7 +138,9 @@ my $pdbFrame = $mw->Frame();
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
 				); # Creates a ctl file button
-
+my $mutlistButton = $mw -> Button(-text => "create list of amino acid substitutions in .txt file", 
+				-command => \&mutlist
+				); # Creates a txt file button
 my $launchButton = $mw -> Button(-text => "launch MD run (pmemd.cuda) - may take many hours", 
 				-command => \&launch,
 				-background => 'gray45',
@@ -220,6 +210,9 @@ $reduceButton->pack(-side=>"bottom",
 $mutButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$mutlistButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $killButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -233,10 +226,6 @@ $controlButton->pack(-side=>"bottom",
 
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
-$subsLabel->pack(-side=>"left");
-$subsEntry->pack(-side=>"left");
-$posLabel->pack(-side=>"left");
-$posEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
@@ -249,10 +238,6 @@ $startEntry->pack(-side=>"left");
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
-		-anchor=>"e");
-$subsFrame->pack(-side=>"top",
-		-anchor=>"e");
-$posFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -418,9 +403,18 @@ print("DROIDS ctl file is made\n");
 
 sub mutate{
 # create mutate_protein.cmd script
+open (LST, "<"."mutate_list.txt") || die "could not find mutate_list.txt\n";
+@LST = <LST>;
 open(MUT, ">"."mutate_protein.cmd");
 print MUT "open $fileIDr".".pdb\n";
-print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+    for (my $l = 0; $l < scalar @LST; $l++){
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
 print MUT "write 0 $fileIDr"."mut.pdb\n";
 close MUT;
 
@@ -432,6 +426,29 @@ print "\nmutant protein PDB file was created\n";
 $fileIDq = "$fileIDr"."mut";
 control;
 print "\nall control files are updated\n\n";
+}
+#####################################################################################################
+
+sub mutlist{
+# create mutate_protein.cmd script
+open(MUT, ">"."mutate_list.txt");
+print MUT "substitution\t"."position\n";
+close MUT;
+print "opening mutate_list.txt using gedit\n\n";
+print "type two tab separated columns under 'substitution' and 'position' then save and close\n\n";
+print "for example\n\n";
+print "substitution\t"."position\n";
+print "ALA\t"."23\n";
+print "TYR\t"."31\n";
+print "PRO\t"."35\n";
+print "LEU\t"."47\n";
+print "ARG\t"."52\n";
+
+system "gedit mutate_list.txt\n";
+
+# run mutate_protein.cmd script
+print "\nmutant list file (mutate_list.txt) was created\n";
+
 }
 
 #####################################################################################################
@@ -849,6 +866,7 @@ open (OUT2, ">"."DROIDSfluctuationAVG.txt") or die "could not create output file
 print OUT2 "pos_ref\t"."res_ref\t"."res_query\t"."flux_ref_avg\t"."flux_query_avg\t"."delta_flux\t"."abs_delta_flux\t"."KLdivergence\n";
 @REFfluxAvg = ();
 @QUERYfluxAvg = ();
+$KL = 0;
 for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 			     my $INrow = $IN[$j];
 	         my @INrow = split(/\s+/, $INrow); 
@@ -998,7 +1016,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSsp.pl\n";	
+system "perl GUI_STATS_DROIDSrp.pl\n";	
 }
 
 ##################################################################################################

@@ -405,8 +405,6 @@ print("DROIDS ctl file is made\n");
 sub teLeap { # create topology and coordinate files 
 system "perl teLeap_proteinQuery.pl\n";
 system "perl teLeap_proteinReference.pl\n";
-system "perl teLeap_proteinQuery.pl\n";
-system "perl teLeap_proteinReference.pl\n";
 my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
 my $filecheck2 = "vac_".$fileIDr."REDUCED.prmtop";
 my $filecheck3 = "wat_".$fileIDq."REDUCED.inpcrd";

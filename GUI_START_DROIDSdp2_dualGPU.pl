@@ -150,7 +150,12 @@ my $pdbFrame = $mw->Frame();
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
 				); # Creates a ctl file button
-
+my $translistButton = $mw -> Button(-text => "create list of trans regulatory amino acid substitutions in .txt file", 
+				-command => \&translist
+				); # Creates a txt file button
+my $cislistButton = $mw -> Button(-text => "create list of cis regulatory nucleic acid substitutions in .txt file", 
+				-command => \&cislist
+				); # Creates a txt file button
 my $launchButton = $mw -> Button(-text => "launch MD run (pmemd.cuda) - may take many hours", 
 				-command => \&launch,
 				-background => 'gray45',
@@ -164,7 +169,9 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-
+my $mutButton = $mw -> Button(-text => "create mutant PDB files", 
+				-command => \&mutate
+				); # Creates a mutation file  button
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
@@ -213,6 +220,15 @@ $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		);
 $reduceButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$mutButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$cislistButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$translistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $killButton->pack(-side=>"bottom",
@@ -410,6 +426,110 @@ print("DROIDS ctl file is made\n");
 
 }
 
+#####################################################################################################
+
+sub mutate{
+# create mutate_protein.cmd script
+open (LST, "<"."mutate_list_trans.txt") || die "could not find mutate_list_trans.txt\n";
+@LST = <LST>;
+open (LST2, "<"."mutate_list_cis.txt") || die "could not find mutate_list_cis.txt\n";
+@LST2 = <LST2>;
+#mutate unbound protein
+open(MUT, ">"."mutate_protein_unbound.cmd");
+print MUT "open $fileIDq".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+print MUT "write 0 $fileIDq"."mut.pdb\n";
+close MUT;
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein_unbound.cmd > mutate_protein_unbound.log\n");
+print "\nmutant protein PDB file was created for unbound protein\n";
+
+#mutate bound protein
+open(MUT, ">"."mutate_protein_bound.cmd");
+print MUT "open $fileIDr".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){ #trans reg mutations
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+    for (my $l = 0; $l < scalar @LST2; $l++){ # cis reg mutations
+        if ($l == 0){next;}
+        $LST2row = $LST2[$l];
+        @LST2row = split(/\s+/, $LST2row);
+        $subsTYPEna = $LST2row[0];
+        $subsPOSna = $LST2row[1];
+        print MUT "swapna $subsTYPEna"." :$subsPOSna\n";
+        }
+print MUT "write 0 $fileIDr"."mut.pdb\n";
+close MUT;
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein_bound.cmd > mutate_protein_bound.log\n");
+print "\nmutant protein PDB file was created for bound protein\n";
+
+# rerun ctl files again after specifying mutant as new query
+$fileIDr = "$fileIDr"."mut";
+$fileIDq = "$fileIDq"."mut";
+control;
+print "\nall control files are updated\n\n";
+}
+#####################################################################################################
+
+sub translist{
+# create mutate_protein.cmd script
+open(MUT, ">"."mutate_list_trans.txt");
+print MUT "substitution\t"."position\n";
+close MUT;
+print "opening mutate_list.txt using gedit\n\n";
+print "type two tab separated columns under 'substitution' and 'position' then save and close\n\n";
+print "for example\n\n";
+print "substitution\t"."position\n";
+print "ALA\t"."23\n";
+print "TYR\t"."31\n";
+print "PRO\t"."35\n";
+print "LEU\t"."47\n";
+print "ARG\t"."52\n";
+
+system "gedit mutate_list_trans.txt\n";
+
+# run mutate_protein.cmd script
+print "\nmutant list file (mutate_list_trans.txt) was created\n";
+
+}
+
+#####################################################################################################
+
+sub cislist{
+# create mutate_protein.cmd script
+open(MUT, ">"."mutate_list_cis.txt");
+print MUT "substitution\t"."position\n";
+close MUT;
+print "opening mutate_list.txt using gedit\n\n";
+print "type two tab separated columns under 'substitution' and 'position' then save and close\n\n";
+print "for example\n\n";
+print "substitution\t"."position\n";
+print "A\t"."3\n";
+print "T\t"."7\n";
+print "C\t"."13\n";
+print "G\t"."14\n";
+print "C\t"."15\n";
+
+system "gedit mutate_list_cis.txt\n";
+
+# run mutate_protein.cmd script
+print "\nmutant list file (mutate_list_cis.txt) was created\n";
+
+}
+
 
 #####################################################################################################
 
@@ -465,8 +585,8 @@ sub align{
 
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
 print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
-print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ytb_align.aln)\n\n";
+print "            if satisfied with alignment, save as a clustal file with bound PDB ID\n";
+print "            in title (e.g. 1ytb_bound_align.aln)\n\n";
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;
@@ -799,8 +919,11 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-my $homology = <STDIN>;
-chop($homology);
+#my $homology = <STDIN>;
+#chop($homology);
+print "for mutations on simple DNA-protein interaction analysis 'homology' will be loose\n";
+$homology = "loose";
+sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -964,7 +1087,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSdp1.pl\n";	
+system "perl GUI_STATS_DROIDSdp2.pl\n";	
 }
 
 ##################################################################################################

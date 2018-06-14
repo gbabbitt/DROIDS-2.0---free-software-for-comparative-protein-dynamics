@@ -123,7 +123,7 @@ rc("center #%s:.A" % (model))
 rc("scale 0.4")
 rc("~ribbon")
 #rc("~surface")
-rc("~display")
+rc("~display #0")
 rc("background solid black")
 if rep == "surface":
  rc("surface #%s" % (model))
@@ -137,7 +137,7 @@ if rep == "ribbonsurface":
  rc("surftransparency 50 #%s" % (model))
  rep_key = "r,s"
 rc("defattr %s raiseTool false" % (attr_file))
-col_string = "%s %s %s %s %s %s novalue tan" % (max_value, max_color, mid_value, mid_color, min_value, min_color)
+col_string = "%s %s %s %s %s %s novalue red" % (max_value, max_color, mid_value, mid_color, min_value, min_color)
 rc("colorkey  .08,.1  .10,.800  %s" % (col_string))
 rc("rangecolor %s,%s %s #%s" % (attr, rep_key, col_string, model)) 
 rc("rangecolor %s,a %s #%s" % (attr, col_string, model))

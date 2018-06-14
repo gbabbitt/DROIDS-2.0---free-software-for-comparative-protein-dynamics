@@ -23,7 +23,9 @@ print "path to Chimera .exe\t"."$chimera_path\n";
 #### Declare variables ####
 my $fileIDq = '';
 my $fileIDr = '';
+my $fileIDl = '';
 my $forceID = '';
+my $dforceID = '';
 my $runsID = '';
 my $implicit=0;
 my $explicit=0;
@@ -103,18 +105,23 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID without DNA (e.g. 1ytb_unbound) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID without ligand (e.g. 1hho_unbound) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_bound) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with ligand (e.g. 1hho_bound) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-		
+	my $LfileFrame = $pdbFrame->Frame();
+		my $LfileLabel = $LfileFrame->Label(-text=>"pdb ID for ligand (e.g. 1hho_ligand) : ");
+		my $LfileEntry = $LfileFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$fileIDl
+					);	
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"protein force field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -122,7 +129,7 @@ my $pdbFrame = $mw->Frame();
 					-textvariable=>\$forceID
 					);
       my $dforceFrame = $pdbFrame->Frame();
-		my $dforceLabel = $dforceFrame->Label(-text=>"DNA force field (e.g. leaprc.DNA.OL15): ");
+		my $dforceLabel = $dforceFrame->Label(-text=>"ligand force field (e.g. leaprc.gaff2): ");
 		my $dforceEntry = $dforceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$dforceID
@@ -150,7 +157,9 @@ my $pdbFrame = $mw->Frame();
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
 				); # Creates a ctl file button
-
+my $mutlistButton = $mw -> Button(-text => "create list of amino acid substitutions in .txt file", 
+				-command => \&mutlist
+				); # Creates a txt file button
 my $launchButton = $mw -> Button(-text => "launch MD run (pmemd.cuda) - may take many hours", 
 				-command => \&launch,
 				-background => 'gray45',
@@ -164,10 +173,15 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-
+my $mutButton = $mw -> Button(-text => "create mutant PDB files", 
+				-command => \&mutate
+				); # Creates a mutation file  button
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
+my $antechamberButton = $mw -> Button(-text => "estimate/prepare ligand force field modification (antechamber)", 
+				-command => \&antechamber
+				); # Creates a antechamber button
 my $reduceButton = $mw -> Button(-text => "dry and reduce structure (run pdb4amber)", 
 				-command => \&reduce
 				); # Creates a pdb4amber button
@@ -209,10 +223,19 @@ $launchButton->pack(-side=>"bottom",
 $teLeapButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$antechamberButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		);
 $reduceButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$mutButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$mutlistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $killButton->pack(-side=>"bottom",
@@ -229,6 +252,8 @@ $QfileLabel->pack(-side=>"left");
 $QfileEntry->pack(-side=>"left");
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
+$LfileLabel->pack(-side=>"left");
+$LfileEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
 $dforceLabel->pack(-side=>"left");
@@ -247,6 +272,8 @@ $dforceFrame->pack(-side=>"top",
 $QfileFrame->pack(-side=>"top",
 		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
+		-anchor=>"e");
+$LfileFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -288,8 +315,9 @@ sub control { # Write a control file and then call appropriate scripts that refe
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
+LIGAND_ID\t".$fileIDl."REDUCED\t# Protein Data Bank ID for MD run
 Force_Field\t$forceID\t# AMBER force field to use in MD runs
-DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
+LIGAND_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
@@ -301,8 +329,9 @@ close $ctlFile1;
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
+LIGAND_ID\t".$fileIDl."REDUCED\t# Protein Data Bank ID for MD run
 Force_Field\t$forceID\t# AMBER force field to use in MD runs
-DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
+LIGAND_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
@@ -410,22 +439,95 @@ print("DROIDS ctl file is made\n");
 
 }
 
+#####################################################################################################
+
+sub mutate{
+# create mutate_protein.cmd script
+open (LST, "<"."mutate_list.txt") || die "could not find mutate_list_trans.txt\n";
+@LST = <LST>;
+#mutate unbound protein
+open(MUT, ">"."mutate_protein_unbound.cmd");
+print MUT "open $fileIDq".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+print MUT "write 0 $fileIDq"."mut.pdb\n";
+close MUT;
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein_unbound.cmd > mutate_protein_unbound.log\n");
+print "\nmutant protein PDB file was created for unbound protein\n";
+
+#mutate bound protein
+open(MUT, ">"."mutate_protein_bound.cmd");
+print MUT "open $fileIDr".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){ #trans reg mutations
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+print MUT "write 0 $fileIDr"."mut.pdb\n";
+close MUT;
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein_bound.cmd > mutate_protein_bound.log\n");
+print "\nmutant protein PDB file was created for bound protein\n";
+
+# rerun ctl files again after specifying mutant as new query
+$fileIDr = "$fileIDr"."mut";
+$fileIDq = "$fileIDq"."mut";
+control;
+print "\nall control files are updated\n\n";
+}
+#####################################################################################################
+
+sub mutlist{
+# create mutate_protein.cmd script
+open(MUT, ">"."mutate_list.txt");
+print MUT "substitution\t"."position\n";
+close MUT;
+print "opening mutate_list.txt using gedit\n\n";
+print "type two tab separated columns under 'substitution' and 'position' then save and close\n\n";
+print "for example\n\n";
+print "substitution\t"."position\n";
+print "ALA\t"."23\n";
+print "TYR\t"."31\n";
+print "PRO\t"."35\n";
+print "LEU\t"."47\n";
+print "ARG\t"."52\n";
+
+system "gedit mutate_list.txt\n";
+
+# run mutate_protein.cmd script
+print "\nmutant list file (mutate_list.txt) was created\n";
+
+}
 
 #####################################################################################################
 
 sub teLeap { # create topology and coordinate files 
-system "perl teLeap_dnaproteinQuery.pl\n";
-system "perl teLeap_dnaproteinReference.pl\n";
+system "perl teLeap_ligandproteinQuery.pl\n";
+system "perl teLeap_ligandproteinReference.pl\n";
 my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
-my $filecheck2 = "vac_".$fileIDr."REDUCED.prmtop";
-my $filecheck3 = "wat_".$fileIDq."REDUCED.inpcrd";
+my $filecheck3 = "vac_".$fileIDr."REDUCED.prmtop";
+my $filecheck2 = "wat_".$fileIDq."REDUCED.inpcrd";
 my $filecheck4 = "wat_".$fileIDr."REDUCED.inpcrd";
+my $filecheck5 = "vac_".$fileIDl."REDUCED.prmtop";
+my $filecheck6 = "wat_".$fileIDl."REDUCED.inpcrd";
 my $size1 = -s $filecheck1;
 my $size2 = -s $filecheck2;
 my $size3 = -s $filecheck3;
 my $size4 = -s $filecheck4;
-print "$size1\t"."$size2\t"."$size3\t"."$size4\n";
-if ($size1 <= 10 || $size2 <= 10 || $size3 <= 10 || $size4 <= 10){print "teLeap may have failed (double check pdb files for problems)\n";}
+my $size5 = -s $filecheck5;
+my $size6 = -s $filecheck6;
+print "$size1\t"."$size2\t"."$size3\t"."$size4\t"."$size5\t"."$size6\n";
+if ($size1 <= 10 || $size2 <= 10 || $size3 <= 10 || $size4 <= 10 || $size5 <= 10 || $size6 <= 10){print "teLeap may have failed (double check pdb files for problems)\n";}
 else {print "teLeap procedure appears to have run (double check .prmtop and .inpcrd files)\n";}
 }
 
@@ -433,7 +535,26 @@ else {print "teLeap procedure appears to have run (double check .prmtop and .inp
 sub reduce { # create topology and coordinate files 
 system "pdb4amber -i $fileIDq.pdb -o ".$fileIDq."REDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
+system "pdb4amber -i $fileIDl.pdb -o ".$fileIDl."REDUCED.pdb --dry --reduce \n";
+sleep(1);
+print "\n\npdb4amber is completed\n\n";
 }
+######################################################################################################
+sub antechamber {
+print "\n\n==========================================================================\n";
+print "\nrunning 'antechamber' package...QMMM calculations may take several minutes\n";
+print "note: if this step fails, be sure your ligand PDB comprises ONLY a single unit\n";
+print "note: also be sure to inspect warning messages on the terminal\n\n";
+print "\n============================================================================\n\n";
+sleep(5);
+system "antechamber -i $fileIDl"."REDUCED.pdb -fi pdb -o $fileIDl"."REDUCED.mol2 -fo mol2 -c bcc -s 2\n";
+sleep(1);
+print "running parmchk to test if all parameters required are available";
+system "parmchk -i $fileIDl"."REDUCED.mol2 -f mol2 -o $fileIDl"."REDUCED.frcmod\n";
+sleep(1);
+print "\n\nparmchk is completed\n\n";
+}
+
 
 ######################################################################################################
 
@@ -465,8 +586,8 @@ sub align{
 
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
 print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
-print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ytb_align.aln)\n\n";
+print "            if satisfied with alignment, save as a clustal file with bound PDB ID\n";
+print "            in title (e.g. 1hho_align.aln)\n\n";
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;
@@ -799,8 +920,11 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-my $homology = <STDIN>;
-chop($homology);
+#my $homology = <STDIN>;
+#chop($homology);
+print "for mutations on simple DNA-protein interaction analysis 'homology' will be strict\n";
+$homology = "strict";
+sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -964,7 +1088,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSdp1.pl\n";	
+system "perl GUI_STATS_DROIDSlp2.pl\n";	
 }
 
 ##################################################################################################

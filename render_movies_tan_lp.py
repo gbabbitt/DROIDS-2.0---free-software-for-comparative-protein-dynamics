@@ -123,7 +123,7 @@ rc("center #%s:.A" % (model))
 rc("scale 0.4")
 rc("~ribbon")
 #rc("~surface")
-rc("~display")
+rc("~display #0")
 rc("background solid black")
 if rep == "surface":
  rc("surface #%s" % (model))

@@ -103,20 +103,20 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID without DNA (e.g. 1ytb_unbound) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_bound) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_ortholog) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
 		
 	my $forceFrame = $pdbFrame->Frame();
-		my $forceLabel = $forceFrame->Label(-text=>"protein force field (e.g. leaprc.protein.ff14SB): ");
+		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$forceID
@@ -126,7 +126,7 @@ my $pdbFrame = $mw->Frame();
 		my $dforceEntry = $dforceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$dforceID
-					);    
+					);     
 	my $runsFrame = $pdbFrame->Frame();
 		my $runsLabel = $runsFrame->Label(-text=>"number of repeated MD sample runs: ");
 		my $runsEntry = $runsFrame->Entry(-borderwidth => 2,
@@ -799,8 +799,18 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
-my $homology = <STDIN>;
-chop($homology);
+## choose homology
+#my $homology = <STDIN>;
+#chop($homology);
+
+$homology = "loose";
+print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
+sleep(2);
+
+#$homology = "strict";
+#print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
+#sleep(2);
+
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -964,7 +974,7 @@ sleep(2);
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
 
-system "perl GUI_STATS_DROIDSdp1.pl\n";	
+system "perl GUI_STATS_DROIDSdp3.pl\n";	
 }
 
 ##################################################################################################

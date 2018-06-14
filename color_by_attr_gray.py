@@ -109,7 +109,8 @@ rc("lighting sharpness 10")
 rc("center #%s:.A" % (model))
 rc("scale 0.4")
 rc("~ribbon")
-rc("~surface")
+#rc("~surface")
+rc("~display")
 rc("background solid black")
 
 if rep == "surface":

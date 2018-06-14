@@ -472,7 +472,7 @@ sub align{
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
 print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
 print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ubq_align.aln)\n\n";
+print "            in title (e.g. 1ytb_align.aln)\n\n";
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;

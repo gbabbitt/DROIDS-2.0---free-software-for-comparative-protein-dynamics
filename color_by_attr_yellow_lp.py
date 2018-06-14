@@ -123,7 +123,7 @@ if rep == "ribbon":
 if rep == "ribbonsurface":
  rc("ribbon #%s" % (model))
  rc("surface #%s" % (model))
- rc("surftransparency 50 #%s" % (model))
+ rc("surftransparency 65 #%s" % (model))
  rep_key = "r,s"
 rc("defattr %s raiseTool false" % (attr_file))
 
@@ -133,4 +133,5 @@ rc("colorkey  .08,.1  .10,.800  %s" % (col_string))
 
 rc("rangecolor %s,%s %s #%s" % (attr, rep_key, col_string, model)) 
 rc("rangecolor %s,a %s #%s" % (attr, col_string, model))
-
+# open again with ligand
+rc("open md:%s.meta" % (rID))

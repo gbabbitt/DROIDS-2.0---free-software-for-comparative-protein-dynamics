@@ -100,62 +100,62 @@ my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARIS
 				-borderwidth => 2
 				);
         
-   my $ssRadio = $pipeFrame->Radiobutton( -text => "(1) analyze stability (self-similarity) of dynamics on a single protein 									           (requires 1 PDB ID)",
+   my $ssRadio = $pipeFrame->Radiobutton( -text => "(1) analyze stability (self-similarity) of dynamics on a single protein		 									            (requires 1 PDB ID)",
 						-foreground => 'navy',
                         -value=>"ss",
 						-variable=>\$testType
 						);
-	 my $sp1Radio = $pipeFrame->Radiobutton( -text => "(2) analyze impact of single mutation or site-directed mutagenesis on a protein 				         (requires 1 PDB ID and (location/type) of mutation)",
+	 my $sp1Radio = $pipeFrame->Radiobutton( -text => "(2) analyze impact of single mutation or site-directed mutagenesis on a protein			 				          (requires 1 PDB ID and (location/type) of mutation)",
 						-foreground => 'navy',
                         -value=>"sp1",
 						-variable=>\$testType
 						);
-	 my $sp2Radio = $pipeFrame->Radiobutton( -text => "(3) analyze impact of several mutations or multiple site-directed mutagenesis				           (requires 1 PDB ID and list of (locations/types) of mutation)",
+	 my $sp2Radio = $pipeFrame->Radiobutton( -text => "(3) analyze impact of several mutations or multiple site-directed mutagenesis						            (requires 1 PDB ID and list of (locations/types) of mutation)",
 						-foreground => 'navy',
                         -value=>"sp2",
 						-variable=>\$testType
 						);
-	 my $mpRadio = $pipeFrame->Radiobutton( -text => "(4) analyze impact of greater mutational divergence on a protein  			            		      (requires 2 PDB ID's representing an ortholog or paralog pair)",
+	 my $mpRadio = $pipeFrame->Radiobutton( -text => "(4) analyze impact of evolutionary divergence on a protein			  			            		        (requires 2 PDB ID's representing an ortholog or paralog pair)",
 						-foreground => 'navy',
                         -value=>"mp",
 						-variable=>\$testType
 						);
-         my $rpRadio = $pipeFrame->Radiobutton( -text => "(5) analyze and rank individual impacts of several mutations on a protein  	 	      		           (requires 1 PDB ID and list of (locations/types) of mutation)",
-						-foreground => 'navy',
-                        -value=>"rp",
-						-variable=>\$testType
-						);
-	 my $ds1Radio = $pipeFrame->Radiobutton( -text => "(6) analyze relative impact of mutation in a disease variant			       (requires 2 PDB ID's = human/ortholog pair + (location/type) of mutation on disease variant)",
+    my $ds1Radio = $pipeFrame->Radiobutton( -text => "(5) analyze relative impact of mutation in a disease variant	 				       (requires 2 PDB ID's = human/ortholog pair + (location/type) of mutation on disease variant)",
 						-foreground => 'navy',
                         -value=>"ds1",
 						-variable=>\$testType
 						);
-         my $ds2Radio = $pipeFrame->Radiobutton( -text => "(7) classify impact of mutation in an unknown variant 		(requires 2 PDB ID's = human/ortholog pair + (location/type) of mutations for (disease/unknown) variants)",
+         my $ds2Radio = $pipeFrame->Radiobutton( -text => "(6) classify impact of mutation in an unknown variant in disease system		(requires 2 PDB ID's = human/ortholog pair + (location/type) of mutations for (disease/unknown) variants)",
 						-foreground => 'navy',
                         -value=>"ds2",
 						-variable=>\$testType
 						);
-	 my $dp1Radio = $pipeFrame->Radiobutton( -text => "(8) analyze impact of DNA-protein interaction upon binding  					   	                (requires 2 PDB ID's with and w/o DNA binding)",
+	 my $dp1Radio = $pipeFrame->Radiobutton( -text => "(7) analyze impact of DNA-protein interaction upon binding    					   	                      (requires 2 PDB ID's for DNA-protein complex and protein-only)",
 						-foreground => 'navy',
                         -value=>"dp1",
 						-variable=>\$testType
 						);
-	 my $dp2Radio = $pipeFrame->Radiobutton( -text => "(9) analyze impact of mutation(s) on DNA-protein interaction 			    	    (requires 1 PDB ID and (location/type) of cis or trans regulatory mutation)",
+	 my $dp2Radio = $pipeFrame->Radiobutton( -text => "(8) analyze impact of mutation(s) on DNA-protein interaction		 		                (requires 2 PDB ID's as in # 7 and (locations/types) of cis or trans regulatory mutation)",
 						-foreground => 'navy',
                         -value=>"dp2",
 						-variable=>\$testType
 						);
-         my $lp1Radio = $pipeFrame->Radiobutton( -text => "(10) analyze impact of a ligand interaction with a protein 					 	              (requires 2 PDB ID's with and w/o drug, toxin, or activator)",
+	 my $dp3Radio = $pipeFrame->Radiobutton( -text => "(9) compare impact of two DNA-protein interactions 				 			    	             (requires 2 PDB ID representing binding protein homologs)",
+						-foreground => 'navy',
+                        -value=>"dp3",
+						-variable=>\$testType
+						);
+         my $lp1Radio = $pipeFrame->Radiobutton( -text => "(10) analyze impact of a protein-ligand interaction with drug, toxin, or activator					(requires 3 PDB ID's = protein-ligand complex, protein-only, and ligand only)",
 						-foreground => 'navy',
                         -value=>"lp1",
 						-variable=>\$testType
 						);
-	 my $lp2Radio = $pipeFrame->Radiobutton( -text => "(11) compare impact of two ligand interactions with a protein			   		    (requires 2 PDB ID's with drug/toxin inhibitor and normal ligand)",
+	 my $lp2Radio = $pipeFrame->Radiobutton( -text => "(11) analyze impact of mutation(s) on protein-ligand interaction		 			   	          (requires 3 PDB ID's as in #10 and list of (locations/types) of mutation)",
 						-foreground => 'navy',
                         -value=>"lp2",
 						-variable=>\$testType
 						);
-	 my $epRadio = $pipeFrame->Radiobutton( -text => "(12) analyze impact of an epigenetic modification on a protein	       		  (requires 2 PDB ID's with and w/o protonation states, S-S bonds, or phosphorylation)",
+	 my $epRadio = $pipeFrame->Radiobutton( -text => "(12) analyze impact of an epigenetic modification on a protein			       	           (requires 2 PDB ID's with and w/o methylation/acetylation, S-S bonds, or phosphorylation)",
 						-foreground => 'navy',
                         -value=>"ep",
 						-variable=>\$testType
@@ -222,11 +222,11 @@ $ssRadio->pack(-anchor=>"w");
 $sp1Radio->pack(-anchor=>"w");
 $sp2Radio->pack(-anchor=>"w");
 $mpRadio->pack(-anchor=>"w");
-$rpRadio->pack(-anchor=>"w");
 $ds1Radio->pack(-anchor=>"w");
 $ds2Radio->pack(-anchor=>"w");
 $dp1Radio->pack(-anchor=>"w");
 $dp2Radio->pack(-anchor=>"w");
+$dp3Radio->pack(-anchor=>"w");
 $lp1Radio->pack(-anchor=>"w");
 $lp2Radio->pack(-anchor=>"w");
 $epRadio->pack(-anchor=>"w");
@@ -272,16 +272,18 @@ print("launching DROIDS 2.0...\n");
         elsif ($testType eq "ds1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "ds2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "ds2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSrp.pl\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSrp_dualGPU.pl\n";}
-	elsif ($testType eq "dp1" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSdp1.pl\n";}
+        elsif ($testType eq "ds2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+        elsif ($testType eq "ds2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+   elsif ($testType eq "dp1" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSdp1.pl\n";}
         elsif ($testType eq "dp1" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSdp1_dualGPU.pl\n";}
-	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "dp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "lp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "lp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSdp2.pl\n";}
+        elsif ($testType eq "dp2" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSdp2_dualGPU.pl\n";}
+	elsif ($testType eq "dp3" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSdp3.pl\n";}
+        elsif ($testType eq "dp3" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSdp3_dualGPU.pl\n";}
+	elsif ($testType eq "lp1" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSlp1.pl\n";}
+        elsif ($testType eq "lp1" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSlp1_dualGPU.pl\n";}
+	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSlp2.pl\n";}
+        elsif ($testType eq "lp2" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSlp2_dualGPU.pl\n";}
         elsif ($testType eq "ep" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSep.pl\n";}
         elsif ($testType eq "ep" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSep_dualGPU.pl\n";}
         else {print " PLEASE SELECT OPTIONS\n"}
@@ -300,13 +302,13 @@ print("launching DROIDS 2.0...\n");
         elsif ($testType eq "ds1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "ds2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "ds2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "dp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "dp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "dp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+	elsif ($testType eq "dp3" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+        elsif ($testType eq "dp3" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+		  elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "lp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "lp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
@@ -328,13 +330,13 @@ print("launching DROIDS 2.0...\n");
         elsif ($testType eq "ds1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "ds2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "ds2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "rp" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "dp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+   elsif ($testType eq "dp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "dp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "dp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+	elsif ($testType eq "dp3" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+        elsif ($testType eq "dp3" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
+		  elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "lp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
 	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
         elsif ($testType eq "lp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}

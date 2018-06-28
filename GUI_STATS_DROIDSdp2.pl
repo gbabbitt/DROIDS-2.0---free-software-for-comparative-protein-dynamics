@@ -112,8 +112,22 @@ my $mtcFrame = $mw->Frame(	-label => "MULTIPLE TEST CORRECTION",
 						-value=>"fdr",
 						-variable=>\$mtc
 						);
-
-		
+# local mutation defn Frame				
+my $mutFrame = $mw->Frame();
+	my $MfileFrame = $mutFrame->Frame();
+		my $MsizeLabel = $mutFrame->Label(-text=>"define local mutation effect size for rank analysis\n (e.g. 5 = analyze dFLUX within 5 AA's of subs site): ");
+		my $MsizeEntry = $mutFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$mut_targetsize
+					);
+# local mutation defn Frame				
+my $pathFrame = $mw->Frame();
+	my $PfileFrame = $pathFrame->Frame();
+		my $PLabel = $pathFrame->Label(-text=>"define path to previous MD results for normal binding\n (e.g. /home/greg/Desktop/DROIDS-2.0_1ytb_TF_DNA/): ");
+		my $PEntry = $pathFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$normalpath
+					);		
 # Buttons
 
 my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots in R", 
@@ -137,7 +151,11 @@ my $ctlButton = $mw -> Button(-text => "append control file (DROIDS.ctl)",
                 -background => 'gray45',
                 -foreground => 'white'
                 ); # Creates a ctl file button
-
+my $rankButton = $mw -> Button(-text => "rank relative local impacts of each mutation", 
+				-command => \&rank,
+                -background => 'gray45',
+                -foreground => 'white'
+                ); # Creates a ctl file button
 
 #### Organize GUI Layout ####
 $stopButton->pack(-side=>"bottom",
@@ -159,7 +177,19 @@ $ctlButton->pack(-side=>"top",
 $statsButton->pack(-side=>"top",
 			-anchor=>"s"
 			);
-
+$mutFrame->pack(-side=>"top",
+		-anchor=>"s"
+		);
+$MsizeLabel->pack(-side=>"left");
+$MsizeEntry->pack(-side=>"left");
+$pathFrame->pack(-side=>"top",
+		-anchor=>"s"
+		);
+$PLabel->pack(-side=>"left");
+$PEntry->pack(-side=>"left");
+$rankButton->pack(-side=>"top",
+			-anchor=>"s"
+			);
 
 $noneRadio->pack();
 $bonfRadio->pack();
@@ -189,6 +219,241 @@ print("CTL file made\n");
 }
 
 ########################################################################
+
+sub rank{
+#$mut_targetsize = 3;
+print "collecting local atom fluctuations near points of mutation\n";
+sleep(1);
+open(OUT1, ">"."mutate_flux.txt") or die "could not open output file\n";
+print OUT1 "mut_number\t"."subsLOCATION\t"."posAA\t"."refAA\t"."queryAA\t"."atomTYPE\t"."flux_ref\t"."flux_query\n";
+open(MUT, "<"."mutate_list_trans.txt") or die "could not find list of mutations\n";
+my @MUT = <MUT>;
+for (my $m = 0; $m <= scalar @MUT; $m++){
+  my $MUTrow = $MUT[$m];
+  my @MUTrow = split(/\s+/, $MUTrow);
+  my $subsTYPE = $MUTrow[0];
+  if ($m => 1){$subsLOCATION = $MUTrow[1]}
+  my $mut_number = $m;
+  if ($subsLOCATION =~ m/\d/){print "mutation is near "."$subsLOCATION\n"};
+  for (my $r = 0; $r <= $lengthID; $r++){
+   
+   $filenumber = $startN + $r;
+   open(INFO, "<"."atomflux/DROIDSfluctuation_$filenumber.txt") or next;
+   my @INFO = <INFO>;
+   for (my $rr = 0; $rr <= scalar @INFO; $rr++){
+   my $INFOrow = $INFO[$rr];
+	        my @INFOrow = split(/\s+/, $INFOrow); 
+	        my $posAA = $INFOrow[1];
+		   my $refAA = $INFOrow[2];
+		   my $queryAA = $INFOrow[3];
+             my $atomTYPE = $INFOrow[5];
+             my $flux_ref = $INFOrow[6];
+		   my $flux_query = $INFOrow[7];
+     #print "$subsLOCATION\t"."$posAA\n";
+     #if ($subLOCATION - $posAA <= $mut_targetsize){print "$mut_number\t"."$posAA\t"."$refAA\t"."$atomTYPE\t"."$flux_ref\t"."$$flux_query\n"}
+     if ($subsLOCATION =~ m/\d/ && abs($subsLOCATION - $posAA) <=  $mut_targetsize){print OUT1 "$mut_number\t"."$subsLOCATION\t"."$posAA\t"."$refAA\t"."$queryAA\t"."$atomTYPE\t"."$flux_ref\t"."$flux_query\n"}
+    }
+    close INFO;   
+  }
+}
+close MUT;
+close OUT1;     
+print "done collecting local atom fluctuations near points of mutation\n\n";
+sleep(1);
+
+print "collecting local atom fluctuations from normally bound interaction\n";
+sleep(1);
+open(OUT1, ">"."mutate_flux_normal.txt") or die "could not open output file\n";
+print OUT1 "mut_number\t"."subsLOCATION\t"."posAA\t"."refAA\t"."queryAA\t"."atomTYPE\t"."flux_ref\t"."flux_query\n";
+open(MUT, "<"."mutate_list_trans.txt") or die "could not find list of mutations\n";
+my @MUT = <MUT>;
+for (my $m = 0; $m <= scalar @MUT; $m++){
+  my $MUTrow = $MUT[$m];
+  my @MUTrow = split(/\s+/, $MUTrow);
+  my $subsTYPE = $MUTrow[0];
+  if ($m => 1){$subsLOCATION = $MUTrow[1]}
+  my $mut_number = $m;
+  if ($subsLOCATION =~ m/\d/){print "mutation is near "."$subsLOCATION\n"};
+  for (my $r = 0; $r <= $lengthID; $r++){
+   
+   $filenumber = $startN + $r;
+   open(INFO, "<"."$normalpath"."atomflux/DROIDSfluctuation_$filenumber.txt") or next;
+   my @INFO = <INFO>;
+   for (my $rr = 0; $rr <= scalar @INFO; $rr++){
+   my $INFOrow = $INFO[$rr];
+	        my @INFOrow = split(/\s+/, $INFOrow); 
+	        my $posAA = $INFOrow[1];
+		   my $refAA = $INFOrow[2];
+		   my $queryAA = $INFOrow[3];
+             my $atomTYPE = $INFOrow[5];
+             my $flux_ref = $INFOrow[6];
+		   my $flux_query = $INFOrow[7];
+     #print "$subsLOCATION\t"."$posAA\n";
+     #if ($subLOCATION - $posAA <= $mut_targetsize){print "$mut_number\t"."$posAA\t"."$refAA\t"."$atomTYPE\t"."$flux_ref\t"."$$flux_query\n"}
+     if ($subsLOCATION =~ m/\d/ && abs($subsLOCATION - $posAA) <=  $mut_targetsize){print OUT1 "$mut_number\t"."$subsLOCATION\t"."$posAA\t"."$refAA\t"."$queryAA\t"."$atomTYPE\t"."$flux_ref\t"."$flux_query\n"}
+    }
+    close INFO;   
+  }
+}
+close MUT;
+close OUT1;     
+print "done collecting local atom fluctuations near points of mutation\n\n";
+sleep(1);
+
+print "analyzing local atom fluctuations near points of mutation\n";
+sleep(1);
+open(IN, "<"."DROIDS.ctl") or die "could not find CPPTRAJ input control file\n";
+my @IN = <IN>;
+for (my $c = 0; $c <= scalar @IN; $c++){
+    my $INrow = $IN[$c];
+    my @INrow = split (/\s+/, $INrow);
+    my $header = $INrow[0];
+    my $value = $INrow[1];
+    print "$header\t"."$value\n";
+    if ($header eq "query") { $queryID = $value;}
+    if ($header eq "cutoff_value") { $level_sig = $value;}
+    if ($header eq "test_type") { $seq_struct_flux = $value;}
+close IN;
+}
+
+open(OUT2, ">"."./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KLmutations.txt")or die "could not open statistics.txt\n";
+print OUT2 "location\t"."refAA\t"."queryAA\t"."KLdivergence\t"."effect\t"."label\n";
+
+@fluxR = ();
+@fluxQ = ();
+open(MUT2, "<"."mutate_flux.txt") or die "could not find list of mutations\n";
+my @MUT2 = <MUT2>;
+open(MUT3, "<"."mutate_flux_normal.txt") or die "could not find list of mutations\n"; # NOTE: normal bound protein is reference (not unbound protein)
+my @MUT3 = <MUT3>;
+for (my $s = 0; $s <= scalar @MUT2; $s++){
+  if ($s == 0){next;}
+  my $MUTrow = $MUT2[$s];
+  my $nextMUTrow = $MUT2[$s+1];
+  my $normMUTrow = $MUT3[$s]; # NOTE: normal bound protein is reference (not unbound protein)
+  my @MUTrow = split(/\s+/, $MUTrow);
+  my @nextMUTrow = split(/\s+/, $nextMUTrow);
+  my @normMUTrow = split(/\s+/, $normMUTrow);
+  my $mut_number = $MUTrow[0];
+  my $next_number = $nextMUTrow[0];
+  my $mut_location = $MUTrow[1];
+  my $test_location = $MUTrow[2];
+  my $ref_AA = $MUTrow[3];
+  my $mut_AA = $MUTrow[4];
+  my $mut_fluxR = $normMUTrow[6]; # NOTE: normal bound protein is reference (not unbound protein)
+  my $mut_fluxQ = $MUTrow[6];
+  push (@fluxR, $mut_fluxR);
+  push (@fluxQ, $mut_fluxQ);
+  #print "$mut_number\t"."$next_number\n";
+  if ($mut_location == $test_location){$label = "$ref_AA"."->"."$mut_AA"."$mut_location";}
+  if ($mut_number != $next_number){
+     print scalar @fluxR; print "\n";
+     print scalar @fluxQ; print "\n";
+     
+     # calculate avg dFLUX
+     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+     $statSCORE->add_data (@fluxR);
+	$flux_ref_avg = $statSCORE->mean();
+     #$flux_ref_n = $statSCORE->count();
+     #print "flux_ref_n\t"."$flux_ref_n\n";
+	$statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
+     $statSCORE->add_data (@fluxQ);
+     $flux_query_avg = $statSCORE->mean();
+     #$flux_query_n = $statSCORE->count();
+     #print "flux_query_n\t"."$flux_query_n\n";
+     $delta_flux = ($flux_ref_avg - $flux_query_avg);
+     # calculate JS divergence
+     open (TMP1, ">"."flux_mut_temp.txt") or die "could not create temp file\n";
+     print TMP1 "flux_ref\t"."flux_query\n";
+     for (my $t = 0; $t <= scalar @fluxQ; $t++){print TMP1 "$fluxR[$t]\t"; print TMP1 "$fluxQ[$t]\n";}
+     close TMP1;
+     open (TMP2, ">"."flux_mut_KL.txt") or die "could not create temp file\n";
+     close TMP2;
+     open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+     print Rinput "library('FNN')\n";
+     print Rinput "data = read.table('flux_mut_temp.txt', header = TRUE)\n"; 
+     $flux_ref = "data\$flux_ref"; # flux on reference residue
+     $flux_query = "data\$flux_query"; # flux on query residue
+     print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
+     #print Rinput "print(d1)\n";
+     print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
+     print Rinput "print(myKL[10])\n";
+     print Rinput "sink('flux_mut_KL.txt')\n";
+     print Rinput "print(myKL[10])\n";
+     print Rinput "sink()\n";
+     # write to output file and quit R
+     print Rinput "q()\n";# quit R 
+     print Rinput "n\n";# save workspace image?
+     close Rinput;
+     open (TMP3, "<"."flux_mut_KL.txt") or die "could not create temp file\n";
+     my @TMP3 = <TMP3>;
+     for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
+     $TMP3row = $TMP3[$tt];
+     @TMP3row = split (/\s+/, $TMP3row);
+     $header = $TMP3row[0];
+     $value = $TMP3row[1];
+     #print "$header\t"."$value\n";
+     if ($header eq "[1]"){$KL = $value;}
+     }
+     if ($delta_flux >= 0){$effect = "BINDING_STABILIZED";} # make KL value negative if dFLUX is negative
+     if ($delta_flux < 0){$effect = "BINDING_DESTABILIZED";} # make KL value negative if dFLUX is negative
+     print "my KL is "."$KL\n";
+     close TMP3;
+     print OUT2 "$mut_location\t"."$ref_AA\t"."$mut_AA\t"."$KL\t"."$effect\t"."$label\n";
+     @fluxR = ();
+     @fluxQ = ();
+     }
+ 
+}
+close MUT2;
+close MUT3;
+close OUT2;
+sleep(1);
+print "\ndone analyzing local atom fluctuations near points of mutation\n\n";
+sleep(1);
+print "\nplotting bar chart of local impacts near points of mutation\n\n";
+sleep(1);
+open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+
+# load plotting libraries
+print Rinput "library(ggplot2)\n";
+print Rinput "library(gridExtra)\n";
+
+# read data into R
+print Rinput "data = read.table('./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KLmutations.txt', header = TRUE)\n"; 
+
+$location = "data\$location"; # position 	
+$label = "data\$label"; # AA label 
+$effect = "data\$effect"; # effect of mutation
+$KLdivergence = "data\$KLdivergence"; # impact of mutation
+$queryAA = "data\$queryAA"; # avg flux on query structure
+print Rinput "data\n";
+
+# barplot
+print Rinput "d1 = data.frame(location=$location, effect=factor($effect), AAquery=factor($queryAA),label=factor($label), Yval=$KLdivergence)\n";
+print Rinput "myplot1 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=effect)) + xlim(0, $lengthID) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
+print Rinput "myplot2 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=label)) + xlim(0, $lengthID) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
+
+print Rinput "library(grid)\n";
+print Rinput "pushViewport(viewport(layout = grid.layout(2, 1)))\n";
+print Rinput "print(myplot1, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))\n";
+print Rinput "print(myplot2, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))\n";
+
+# write to output file and quit R
+print Rinput "q()\n";# quit R 
+print Rinput "n\n";# save workspace image?
+close Rinput;
+print "\n\n";
+
+print " copying plots\n\n";
+sleep(1);
+my $oldfilename = "Rplots.pdf";
+my $newfilename = "./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/"."KLmutations.pdf";
+copy($oldfilename, $newfilename);	
+sleep(1);
+print " close PDF viewer to continue\n\n";
+print "\ndone plotting bar chart of local impacts near points of mutation\n\n";
+system "evince ./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level_sig"."/KLmutations.pdf\n";
+}
 
 
 #################################################################

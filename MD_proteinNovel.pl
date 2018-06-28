@@ -6,7 +6,7 @@ use List::Util qw(shuffle);
 
 print "control file inputs\n\n";
 
-open(IN, "<"."MDq.ctl") or die "could not find MD.ctl control file\n";
+open(IN, "<"."MDn.ctl") or die "could not find MD.ctl control file\n";
 @IN = <IN>;
 for (my $c = 0; $c <= scalar @IN; $c++){
     $INrow = $IN[$c];
@@ -23,6 +23,7 @@ for (my $c = 0; $c <= scalar @IN; $c++){
     if ($header eq "Solvation_Method") { $Solvation_Method = $value;}
     if ($header eq "Salt_Conc") { $Salt_Conc = $value;}
 }
+
 
 #my $protein_label = $ARGV[0];
 my $protein_label = $PDB_ID;
@@ -74,7 +75,7 @@ if (-e "$protein_label.pdb") { print "$protein_label.pdb found\n"; }
 #	print LEAP_PROTEIN "solvateoct protein$protein_label TIP3PBOX 10.0\n";
 #	print LEAP_PROTEIN "saveamberparm protein$protein_label wat"."_$protein_label.prmtop wat"."_$protein_label.inpcrd\n";
 #	print LEAP_PROTEIN "quit\n";
-# close LEAP_PROTEIN;
+#close LEAP_PROTEIN;
 
 #sleep(1);
 
@@ -172,8 +173,10 @@ open(SANDER_EQ_AA, ">"."$protein_label"."_eq.in") or die "could not open SANDER_
 
 close SANDER_EQ_AA;
 
-# Prepare random time spacing file for sander
+
+# Prepare random time spacing files for sander
 print " \nprepare random time spacing files\n\n";
+sleep(1);
 for (my $jj = 0; $jj < $num_runs; $jj++) {
 $len_rand = int($len_prod*rand()*0.5);
 print "sample $jj "."= "."$len_rand"."fs\n";
@@ -200,12 +203,13 @@ open(SANDER_EQ_AA, ">"."$protein_label"."_rand$jj.in") or die "could not open SA
 	#print SANDER_EQ_AA "nmropt=1,\n"; 
 	print SANDER_EQ_AA "ig=-1,\n"; 
 	print SANDER_EQ_AA "igb=$igb,\n";
-	if($method eq "implicit"){print SANDER_EQ_AA "saltcon = $Salt_Conc,\n";}
-    print SANDER_EQ_AA "taup=1,\n";
+    if($method eq "implicit"){print SANDER_EQ_AA "saltcon = $Salt_Conc,\n";}
+	print SANDER_EQ_AA "taup=1,\n";
 	print SANDER_EQ_AA "/\n"; 
 
 close SANDER_EQ_AA;
 }
+
 
 # Prepare production MD input file for sander
 open(SANDER_PROD_AA, ">"."$protein_label"."_prod.in") or die "could not open SANDER_PRODUCTION file\n";
@@ -336,6 +340,7 @@ print "\ end eq run $protein_label\n";
 
 sleep(1);
 
+
 ######################################################################
 # Amino Acid: Run random spacing MD in sander
 ######################################################################
@@ -405,6 +410,7 @@ sleep(1);
 }
 ######################################################################
 
-print "MD on Query structure is complete\n\n";
+print "MD on disease PDB structure is complete\n\n";
 sleep(2);
 exit;
+

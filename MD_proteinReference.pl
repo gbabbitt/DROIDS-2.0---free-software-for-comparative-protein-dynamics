@@ -411,11 +411,6 @@ sleep(1);
 ######################################################################
 
 print "MD on Reference structure is complete\n\n";
-
-print "continue on to CPPTRAJ processing? (y/n)\n";
-my $go = <STDIN>;
-chop($go);
-
-if ($go eq "n") {exit;}
-if ($go eq "y") {system "perl GUI2_DROIDS.pl";}
+sleep(2);
+exit;
 

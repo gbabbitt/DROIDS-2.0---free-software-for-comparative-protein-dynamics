@@ -135,7 +135,7 @@ my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARIS
                         -value=>"dp2",
 						-variable=>\$testType
 						);
-	 my $dp3Radio = $pipeFrame->Radiobutton( -text => "(7) compare impact of two DNA-protein interactions 				 			    	             (requires 2 PDB ID representing binding protein homologs)",
+	 my $dp3Radio = $pipeFrame->Radiobutton( -text => "(7) analyze comparison of two DNA-protein interactions 				 			    	             (requires 2 PDB ID representing binding protein homologs)",
 						-foreground => 'navy',
                         -value=>"dp3",
 						-variable=>\$testType

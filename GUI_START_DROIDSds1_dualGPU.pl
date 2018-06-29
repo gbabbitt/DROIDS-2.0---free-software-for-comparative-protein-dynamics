@@ -4,6 +4,7 @@ use Tk;
 #use warnings;
 use feature ":5.10";
 use Descriptive();
+use File::Copy;
 
 # specify the path to working directory for Chimera here
 open(IN, "<"."paths.ctl") or die "could not find paths.txt file\n";
@@ -103,7 +104,7 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID human ortholog (e.g. 5uak_ortholog) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID human ortholog (e.g. 5uar) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
@@ -144,10 +145,10 @@ my $pdbFrame = $mw->Frame();
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
 				); # Creates a ctl file button
-my $dismutlistButton = $mw -> Button(-text => "create list of disease related amino acid substitutions", 
+my $dismutlistButton = $mw -> Button(-text => "list disease related amino acid substitutions and generate PDB file", 
 				-command => \&dismutlist
 				); # Creates a txt file button
-my $orthomutlistButton = $mw -> Button(-text => "collect list of orthologous amino acid substitutions", 
+my $orthomutlistButton = $mw -> Button(-text => "collect list of orthologous amino acid substitutions and generate PDB file", 
 				-command => \&orthomutlist
 				); # Creates a txt file button
 my $launchButton = $mw -> Button(-text => "launch MD runs for human/ortholog (pmemd.cuda) - may take many hours", 
@@ -167,13 +168,10 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-my $mutButton = $mw -> Button(-text => "create disease mutant PDB file", 
-				-command => \&mutate
-				); # Creates a mutation file  button
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
-my $reduceButton = $mw -> Button(-text => "dry and reduce structure (run pdb4amber)", 
+my $reduceButton = $mw -> Button(-text => "dry and reduce structures (run pdb4amber)", 
 				-command => \&reduce
 				); # Creates a pdb4amber button
 my $alignButton = $mw -> Button(-text => "create sequence and structural alignment for human/ortholog pair (UCSF Chimera)", 
@@ -225,6 +223,9 @@ $launchButton->pack(-side=>"bottom",
 $teLeapButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$reduceButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $orthomutlistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -234,12 +235,6 @@ $align2Button->pack(-side=>"bottom",
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		);
-$reduceButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
-$mutButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
 $dismutlistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -308,7 +303,7 @@ sub control { # Write a control file and then call appropriate scripts that refe
 	$cutoffValueEqFS = $cutoffValueEq*1000000;
 	$cutoffValueProdFS = $cutoffValueProd*1000;
 
-### make qury protein control file ###	
+### make query protein control file ###	
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
@@ -320,7 +315,7 @@ Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
 Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
 close $ctlFile1;
-### make qury protein control file ###	
+### make ref protein control file ###	
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
@@ -373,7 +368,7 @@ print("Making ctl file...\n");
 	$testStr = "flux"; $testStrLong = "fluctuation";  # file and folder labels
 	
 open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
-print CTL "query\t"."$fileIDq\t # Protein Data Bank ID for query structure\n";
+print CTL "query\t"."$fileIDq"."\t # Protein Data Bank ID for query structure\n";
 print CTL "reference\t"."$fileIDr\t # Protein Data Bank ID for reference structure (or neutral model)\n";
 print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
 print CTL "start\t"."$startN\t # number of AA at start of chain\n";
@@ -440,11 +435,11 @@ if ($solvType eq "im") {$implicit = 1;}
 if ($solvType eq "ex") {$explicit = 1;}
 
 ### make atom info control files ###	
-open(ctlFile1, '>', "atominfo_$fileIDq"."_0.ctl") or die "Could not open output file";
+open(ctlFile1, '>', "atominfo_$fileIDr"."_ortholog_0.ctl") or die "Could not open output file";
 my $parm_label1 = '';
-if ($implicit == 1) {my $parm_label1 = "vac_"."$fileIDq"."REDUCED.prmtop"; print ctlFile1 "parm $parm_label1\n";}
-if ($explicit == 1) {my $parm_label1 = "wat_"."$fileIDq"."REDUCED.prmtop"; print ctlFile1 "parm $parm_label1\n";}
-my $traj_label1 = "prod_"."$fileIDq"."REDUCED_0".".nc";
+if ($implicit == 1) {my $parm_label1 = "vac_"."$fileIDr"."_orthologREDUCED.prmtop"; print ctlFile1 "parm $parm_label1\n";}
+if ($explicit == 1) {my $parm_label1 = "wat_"."$fileIDr"."_orthologREDUCED.prmtop"; print ctlFile1 "parm $parm_label1\n";}
+my $traj_label1 = "prod_"."$fileIDr"."_orthologREDUCED_0".".nc";
 print ctlFile1 "trajin $traj_label1\n";
 print ctlFile1 "resinfo !(:WAT)\n"; # all residues but not water
 print ctlFile1 "atominfo \@CA,C,O,N,H&!(:WAT)\n"; # mask for all protein backbone atoms eliminating water
@@ -482,17 +477,17 @@ close ctlFile4;
 
 for (my $i = 0; $i < $runsID; $i++){
 ### make atom flux control files ###	
-open(ctlFile3, '>', "atomflux_$fileIDq"."_$i.ctl") or die "Could not open output file";
+open(ctlFile3, '>', "atomflux_$fileIDr"."_ortholog_$i.ctl") or die "Could not open output file";
 my $parm_label3 = '';
-if ($implicit == 1) {my $parm_label3 = "vac_"."$fileIDq"."REDUCED.prmtop"; print ctlFile3 "parm $parm_label3\n";}
-if ($explicit == 1) {my $parm_label3 = "wat_"."$fileIDq"."REDUCED.prmtop"; print ctlFile3 "parm $parm_label3\n";}
-my $traj_label3 = "prod_"."$fileIDq"."REDUCED_$i".".nc";
+if ($implicit == 1) {my $parm_label3 = "vac_"."$fileIDr"."_orthologREDUCED.prmtop"; print ctlFile3 "parm $parm_label3\n";}
+if ($explicit == 1) {my $parm_label3 = "wat_"."$fileIDr"."_orthologREDUCED.prmtop"; print ctlFile3 "parm $parm_label3\n";}
+my $traj_label3 = "prod_"."$fileIDr"."_orthologREDUCED_$i".".nc";
 print ctlFile3 "trajin $traj_label3\n";	
 print ctlFile3 "rms first\n";
 print ctlFile3 "average crdset MyAvg\n";
 print ctlFile3 "run\n";
 print ctlFile3 "rms ref MyAvg\n";
-print ctlFile3 "atomicfluct out fluct_$fileIDq"."_$i.txt \@CA,C,O,N,H&!(:WAT)\n";
+print ctlFile3 "atomicfluct out fluct_$fileIDr"."_ortholog_$i.txt \@CA,C,O,N,H&!(:WAT)\n";
 #print ctlFile3 "byatom\n"; # hash out for avg atom flux, unhash for total atom flux
 print ctlFile3 "run\n";
 close ctlFile3;
@@ -603,30 +598,6 @@ print "\n\ncpptraj control files is made\n\n";
 }
 #####################################################################################################
 
-sub mutate{
-# create mutate_protein.cmd script
-open (LST, "<"."mutate_list_disease.txt") || die "could not find mutate_list.txt\n";
-@LST = <LST>;
-open(MUT, ">"."mutate_protein.cmd");
-print MUT "open $fileIDr".".pdb\n";
-    for (my $l = 0; $l < scalar @LST; $l++){
-        if ($l == 0){next;}
-        $LSTrow = $LST[$l];
-        @LSTrow = split(/\s+/, $LSTrow);
-        $subsTYPE = $LSTrow[0];
-        $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
-        }
-print MUT "write 0 $fileIDr"."mut.pdb\n";
-close MUT;
-
-# run mutate_protein.cmd script
-system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
-print "\nmutant protein PDB file was created\n";
-
-}
-#####################################################################################################
-
 sub dismutlist{
 # create mutate_protein.cmd script
 open(MUT, ">"."mutate_list_disease.txt");
@@ -646,6 +617,26 @@ system "gedit mutate_list_disease.txt\n";
 
 # run mutate_protein.cmd script
 print "\nmutant list file (mutate_list_disease.txt) was created\n";
+sleep(1);
+# create mutate_protein.cmd script
+open (LST, "<"."mutate_list_disease.txt") || die "could not find mutate_list_disease.txt\n";
+@LST = <LST>;
+open(MUT, ">"."mutate_protein.cmd");
+print MUT "open $fileIDr".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+print MUT "write 0 $fileIDr"."mut.pdb\n";
+close MUT;
+
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
+print "\nmutant protein PDB file was created\n";
 
 }
 
@@ -656,7 +647,7 @@ print "collecting AA substitutions from ortholog alignment file\n";
 sleep(1);
 open(OUT, ">"."mutate_list_ortholog.txt") or die "could not find ortholog alignment file\n";
 print OUT "substitution\t"."position\n";
-open(IN, "<"."$fileIDq"."_align.aln") or die "could not find ortholog alignment file\n";
+open(IN, "<"."$fileIDr"."_ortholog_align.aln") or die "could not find ortholog alignment file\n";
 my @IN = <IN>;
 my $AAlinecount = 1;
 for (my $i = 0; $i < scalar @IN; $i++){
@@ -665,7 +656,7 @@ for (my $i = 0; $i < scalar @IN; $i++){
       my $nextINrow = $IN[$i+1];
 	 my @nextINrow = split (/\s+/, $nextINrow);
 	 my $header = $INrow[0];
-      my $target = $fileIDr."REDUCED";
+      my $target = $fileIDr.".pdb";
       if ($header =~ m/$target/){
           my $humanseq = $INrow[1];
           my $orthoseq = $nextINrow[1];
@@ -684,15 +675,62 @@ for (my $i = 0; $i < scalar @IN; $i++){
                     }
                close IN2;
                $AAcount = $i+$AAlinecount;
-               if ($humanAA ne $orthoAA){print OUT "$orthoAA3\t"."$AAcount\n";}
+               if ($humanAA ne $orthoAA && $orthoAA3 ne "xxx"){print OUT "$orthoAA3\t"."$AAcount\n";}
                }
           $AAlinecount = $AAlinecount+50;
           }
       }
 close IN;
 close OUT;
-sleep(1);
 print "finished creating mutate_ortholog_list.txt\n\n";
+sleep(1);
+# create mutate_protein.cmd script
+open (LST, "<"."mutate_list_ortholog.txt") || die "could not find mutate_list_ortholog.txt\n";
+@LST = <LST>;
+open(MUT, ">"."mutate_protein.cmd");
+print MUT "open $fileIDr".".pdb\n";
+    for (my $l = 0; $l < scalar @LST; $l++){
+        if ($l == 0){next;}
+        $LSTrow = $LST[$l];
+        @LSTrow = split(/\s+/, $LSTrow);
+        $subsTYPE = $LSTrow[0];
+        $subsPOS = $LSTrow[1];
+        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        }
+print MUT "write 0 $fileIDr"."_ortholog.pdb\n";
+close MUT;
+print "creating $fileIDr"."_ortholog.pdb\n\n";
+sleep(1);
+# run mutate_protein.cmd script
+system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
+print "\nmutant protein PDB file was created\n";
+#sleep(1);
+#print "dry and reduce ortholog structure\n";
+#system "pdb4amber -i $fileIDr"."_ortholog.pdb -o ".$fileIDr."_orthologREDUCED.pdb --dry --reduce \n";
+print "ortholog structure is ready\n";
+sleep(2);
+
+print "\n\nNOW YOU MUST REWRITE YOUR ORTHOLOG ALIGNMENT FILE (SHOWING SUBS ONLY)\n\n";
+
+print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
+print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
+print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
+print "            in title (e.g. 5uak_ortholog_align.aln)\n\n";
+
+print "continue? (y/n)\n";
+my $go = <STDIN>;
+chop($go);
+if ($go eq "n") {exit;}
+sleep(1);
+print "            opening USCF Chimera and loading PDB ref structure\n\n";
+print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
+system("$chimera_path"."chimera $fileIDr".".pdb $fileIDr"."_ortholog.pdb\n");
+
+sleep(0.5);
+print "\n\n alignment procedure is complete\n";
+sleep(0.5);
+
+
 }
 
 #####################################################################################################
@@ -701,12 +739,12 @@ sub teLeap { # create topology and coordinate files
 system "perl teLeap_proteinQuery.pl\n";
 system "perl teLeap_proteinReference.pl\n";
 system "perl teLeap_proteinDisease.pl\n";
-my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
+my $filecheck1 = "vac_".$fileIDr."_orthologREDUCED.prmtop";
 my $filecheck2 = "vac_".$fileIDr."REDUCED.prmtop";
-my $filecheck3 = "wat_".$fileIDq."REDUCED.inpcrd";
-my $filecheck4 = "wat_".$fileIDr."REDUCED.inpcrd";
+my $filecheck3 = "wat_".$fileIDr."_orthologREDUCED.prmtop";
+my $filecheck4 = "wat_".$fileIDr."REDUCED.prmtop";
 my $filecheck5 = "vac_".$fileIDr."mutREDUCED.prmtop";
-my $filecheck6 = "wat_".$fileIDr."mutREDUCED.inpcrd";
+my $filecheck6 = "wat_".$fileIDr."mutREDUCED.prmtop";
 my $size1 = -s $filecheck1;
 my $size2 = -s $filecheck2;
 my $size3 = -s $filecheck3;
@@ -720,7 +758,33 @@ else {print "teLeap procedure appears to have run (double check .prmtop and .inp
 
 ######################################################################################################
 sub reduce { # create topology and coordinate files 
+
+### rewrite query protein control files ###	
+open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
+print $ctlFile1 
+"PDB_ID\t".$fileIDr."_orthologREDUCED\t# Protein Data Bank ID for MD run
+Force_Field\t$forceID\t# AMBER force field to use in MD runs
+Number_Runs\t$runsID\t# number of repeated samples of MD runs
+Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
+Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
+Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
+Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
+Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
+close $ctlFile1;
+open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
+print CTL "query\t"."$fileIDr"."_ortholog\t # Protein Data Bank ID for query structure\n";
+print CTL "reference\t"."$fileIDr\t # Protein Data Bank ID for reference structure (or neutral model)\n";
+print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+print CTL "start\t"."$startN\t # number of AA at start of chain\n";
+#print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
+#print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
+#print CTL "test_type\t"."$testStr\t # test method (sequence = local Grantham dist, structure = RMSD, fluctuation = MD)\n";
+#print CTL "color_scheme\t"."$colorType\t # output color scheme (red-green, yellow-blue, or orange-magenta)\n";
+close CTL;
+print("DROIDS ctl file for ortholog is made\n");
+sleep(1);
 system "pdb4amber -i $fileIDq.pdb -o ".$fileIDq."REDUCED.pdb --dry --reduce \n";
+system "pdb4amber -i $fileIDr"."_ortholog.pdb -o ".$fileIDr."_orthologREDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr"."mut.pdb -o ".$fileIDr."mutREDUCED.pdb --dry --reduce \n";
 }
@@ -771,7 +835,7 @@ if ($go eq "n") {exit;}
 sleep(1);
 print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
-system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n");
+system("$chimera_path"."chimera $fileIDr".".pdb $fileIDq".".pdb\n");
 
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
@@ -796,7 +860,7 @@ if ($go eq "n") {exit;}
 sleep(1);
 print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
-system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDr"."mutREDUCED.pdb\n");
+system("$chimera_path"."chimera $fileIDr".".pdb $fileIDr"."mut.pdb\n");
 
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
@@ -808,6 +872,18 @@ sleep(0.5);
 ###################################################################################################
 
 sub info { # launch atom info
+# set query to original
+open(IN, "<"."DROIDS.ctl") or die "could not find DROIDS.txt file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+	 my @INrow = split (/\s+/, $INrow);
+	 my $header = @INrow[0];
+	 my $value = @INrow[1];
+	 if ($header eq "query"){$fileIDq = $value;}
+      }
+close IN;
+####################
 system("cpptraj "."-i ./atominfo_$fileIDq"."_0.ctl | tee cpptraj_atominfo_$fileIDq.txt");
 system("cpptraj "."-i ./atominfo_$fileIDr"."_0.ctl | tee cpptraj_atominfo_$fileIDr.txt");
 # reset query to disease
@@ -837,6 +913,19 @@ for (my $i = 0; $i < scalar @IN; $i++){
 ###################################################################################################
 
 sub flux { # launch atom fluctuation calc
+
+# set query to original
+open(IN, "<"."DROIDS.ctl") or die "could not find DROIDS.txt file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+	 my @INrow = split (/\s+/, $INrow);
+	 my $header = @INrow[0];
+	 my $value = @INrow[1];
+	 if ($header eq "query"){$fileIDq = $value;}
+      }
+close IN;
+####################
 for (my $i = 0; $i < $runsID; $i++){
   system("cpptraj "."-i ./atomflux_$fileIDq"."_$i.ctl | tee cpptraj_atomflux_$fileIDq.txt");
   system("cpptraj "."-i ./atomflux_$fileIDr"."_$i.ctl | tee cpptraj_atomflux_$fileIDr.txt");
@@ -871,11 +960,19 @@ for (my $i = 0; $i < scalar @IN; $i++){
 
 sub done {
 
-#print "Enter residue number at the start of both chains\n";
-#print "(e.g. enter 389 if starts at THR 389.A) \n";
-#print "(e.g. enter 1 if starts at MET 1.A) \n\n";
-#my $startN = <STDIN>;
-#chop($startN);
+# set query to original
+open(IN, "<"."DROIDS.ctl") or die "could not find DROIDS.txt file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+	 my @INrow = split (/\s+/, $INrow);
+	 my $header = @INrow[0];
+	 my $value = @INrow[1];
+	 if ($header eq "query"){$fileIDq = $value;}
+      }
+close IN;
+####################
+
 
 sleep(2);
 print "\n\n searching for atom info file = "."cpptraj_atominfo_$fileIDr.txt\n";
@@ -928,7 +1025,7 @@ my $position = 0;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
+     my $target = $fileIDr.".pdb";
 	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
@@ -976,7 +1073,7 @@ my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
+     my $target = $fileIDr.".pdb";
 	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
@@ -1422,7 +1519,7 @@ my $position = 0;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
+     my $target = $fileIDr.".pdb";
 	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
@@ -1470,7 +1567,7 @@ my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-     my $target = $fileIDr."REDUCED";
+     my $target = $fileIDr.".pdb";
 	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);

@@ -103,13 +103,13 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with epigenetic modification (e.g. 1ubq) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with epigenetic modification (e.g. 2kqp_SS) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID without epigenetic modification (e.g. 2ubq) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID without epigenetic modification (e.g. 2kqp_noSS) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
@@ -454,7 +454,7 @@ sub align{
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
 print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
 print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ubq_align.aln)\n\n";
+print "            in title (e.g. 2kqp_noSS_align.aln)\n\n";
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;

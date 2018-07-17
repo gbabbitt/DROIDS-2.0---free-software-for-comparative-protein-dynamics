@@ -303,7 +303,7 @@ for (my $s = 0; $s <= scalar @MUT2; $s++){
      $flux_query_avg = $statSCORE->mean();
      #$flux_query_n = $statSCORE->count();
      #print "flux_query_n\t"."$flux_query_n\n";
-     $delta_flux = ($flux_ref_avg - $flux_query_avg);
+     $delta_flux = ($flux_query_avg - $flux_ref_avg);
      # calculate JS divergence
      open (TMP1, ">"."flux_mut_temp.txt") or die "could not create temp file\n";
      print TMP1 "flux_ref\t"."flux_query\n";

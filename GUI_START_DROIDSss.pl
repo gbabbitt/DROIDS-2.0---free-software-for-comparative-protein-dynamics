@@ -855,8 +855,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                           $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_query_avg - $flux_ref_avg);
+					 $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					 # calculate JS divergence
                           open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                           print TMP1 "flux_ref\t"."flux_query\n";
@@ -911,8 +911,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                           $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_query_avg - $flux_ref_avg);
+					 $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					 # calculate JS divergence
                           open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                           print TMP1 "flux_ref\t"."flux_query\n";

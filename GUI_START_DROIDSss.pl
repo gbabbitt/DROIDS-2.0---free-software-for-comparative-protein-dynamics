@@ -36,6 +36,7 @@ my $cutoffValueSalt=0.0;
 my $cutoffValueHeatFS=0;
 my $cutoffValueEqFS=0;
 my $cutoffValueProdFS=0;
+my $tempQ=300;
 
 #### Create GUI ####
 my $mw = MainWindow -> new; # Creates a new main window
@@ -115,7 +116,12 @@ my $pdbFrame = $mw->Frame();
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-		
+	my $tempFrame = $pdbFrame->Frame();
+		my $tempLabel = $tempFrame->Label(-text=>"temperature K on query PDB (300 will run both at same temp): ");
+		my $tempEntry = $tempFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$tempQ
+					);	
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -225,6 +231,8 @@ $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
+$tempLabel->pack(-side=>"left");
+$tempEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
 $runsEntry->pack(-side=>"left");
 $lengthLabel->pack(-side=>"left");
@@ -237,6 +245,8 @@ $forceFrame->pack(-side=>"top",
 #$QfileFrame->pack(-side=>"top",
 #		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
+		-anchor=>"e");
+$tempFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -290,7 +300,8 @@ Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
 Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
-Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
+Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)
+Temperature_Query\t$tempQ\t# temperature of query run (300K is same as ref run)";
 close $ctlFile1;
 ### make qury protein control file ###	
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
@@ -434,7 +445,7 @@ system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 ######################################################################################################
 
 sub launch { # launch MD run
-system "perl MD_proteinQuery.pl\n";
+system "perl MD_proteinQueryss.pl\n";
 system "perl MD_proteinReference.pl\n";
 }
 

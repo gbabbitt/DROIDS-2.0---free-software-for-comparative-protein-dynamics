@@ -21,7 +21,7 @@ print "path to teLeap .exe\t"."$teleap_path\n";
 
 print "control file inputs\n\n";
 
-open(IN, "<"."MDq.ctl") or die "could not find MD.ctl control file\n";
+open(IN, "<"."MDr.ctl") or die "could not find MD.ctl control file\n";
 @IN = <IN>;
 for (my $c = 0; $c <= scalar @IN; $c++){
     $INrow = $IN[$c];
@@ -69,7 +69,7 @@ my $len_prod = $Production_Time; # Length of each production run in fs (nstlim v
 my $len_eq = $Equilibration_Time; # Length of equilibration run in fs
 my $len_heat = $Heating_Time; # Length of heat run in fs
 my $proteinfield = $Force_Field; # specify AMBER protein forcefield
-my $ligandfield = $LIGAND_Field; # specify AMBER DNA forcefield
+my $ligandfield = $LIGAND_Field; # specify AMBER ligand forcefield
 
 =pod
 

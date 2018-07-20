@@ -120,15 +120,15 @@ sleep(1);
 ####################################################################
 # Protein: Prepare the input file for tleap 
 ####################################################################
-open(LEAP_PROTEIN, ">"."$protein_labelQ.bat") or die "could not open LEAP file\n";
+open(LEAP_PROTEIN, ">"."$protein_labelR.bat") or die "could not open LEAP file\n";
 	print LEAP_PROTEIN "source "."$teleap_path"."$forcefield\n";
 	print LEAP_PROTEIN "source "."$teleap_path"."leaprc.water.tip3p\n";
-     print LEAP_PROTEIN "protein$protein_labelQ = loadpdb $protein_labelQ.pdb\n";
-	print LEAP_PROTEIN "saveamberparm protein$protein_labelQ vac_$protein_labelQ.prmtop vac_$protein_labelQ.inpcrd\n";
-	print LEAP_PROTEIN "addions protein$protein_labelQ Na+ 0\n"; # only use to charge or neutralize explicit solvent
-	print LEAP_PROTEIN "saveamberparm protein$protein_labelQ ion_$protein_labelQ.prmtop ion_$protein_labelQ.inpcrd\n";
-	print LEAP_PROTEIN "solvateoct protein$protein_labelQ TIP3PBOX 10.0\n";
-	print LEAP_PROTEIN "saveamberparm protein$protein_labelQ wat"."_$protein_labelQ.prmtop wat"."_$protein_labelQ.inpcrd\n";
+     print LEAP_PROTEIN "protein$protein_labelR = loadpdb $protein_labelR.pdb\n";
+	print LEAP_PROTEIN "saveamberparm protein$protein_labelR vac_$protein_labelR.prmtop vac_$protein_labelR.inpcrd\n";
+	print LEAP_PROTEIN "addions protein$protein_labelR Na+ 0\n"; # only use to charge or neutralize explicit solvent
+	print LEAP_PROTEIN "saveamberparm protein$protein_labelR ion_$protein_labelR.prmtop ion_$protein_labelR.inpcrd\n";
+	print LEAP_PROTEIN "solvateoct protein$protein_labelR TIP3PBOX 10.0\n";
+	print LEAP_PROTEIN "saveamberparm protein$protein_labelR wat"."_$protein_labelR.prmtop wat"."_$protein_labelR.inpcrd\n";
 	print LEAP_PROTEIN "quit\n";
 close LEAP_PROTEIN;
 
@@ -138,20 +138,21 @@ sleep(1);
 ####################################################################
 # Ligand-Protein complex: create file for tleap 
 ####################################################################
-open(LEAP_COMPLEX, ">"."$protein_labelR.bat") or die "could not open LEAP file\n";
+open(LEAP_COMPLEX, ">"."$protein_labelQ.bat") or die "could not open LEAP file\n";
 	print LEAP_COMPLEX "source "."$teleap_path"."$forcefield\n";
      print LEAP_COMPLEX "source "."$teleap_path"."$ligandfield\n";
+     print LEAP_COMPLEX "source "."$teleap_path"."leaprc.water.tip3p\n";
 	print LEAP_COMPLEX "loadoff ligand.lib\n";
-     print LEAP_COMPLEX "protein$protein_labelQ = loadpdb $protein_labelQ.pdb\n";
+     print LEAP_COMPLEX "protein$protein_labelR = loadpdb $protein_labelR.pdb\n";
      print LEAP_COMPLEX "loadamberparams $ligand_label".".frcmod\n";
      print LEAP_COMPLEX "ligand$ligand_label = loadmol2 $ligand_label.mol2\n";
-     print LEAP_COMPLEX "complex$protein_labelR = combine{protein$protein_labelQ ligand$ligand_label}\n";
-     print LEAP_COMPLEX "savepdb complex$protein_labelR complex_$protein_labelR.pdb\n";
-     print LEAP_COMPLEX "saveamberparm complex$protein_labelR vac_$protein_labelR.prmtop vac_$protein_labelR.inpcrd\n";
-     print LEAP_COMPLEX "addions complex$protein_labelR Na+ 0\n"; # only use to charge or neutralize explicit solvent
-	print LEAP_COMPLEX "saveamberparm complex$protein_labelR ion_$protein_labelR.prmtop ion_$protein_labelR.inpcrd\n";
-	print LEAP_COMPLEX "solvateoct complex$protein_labelR TIP3PBOX 10.0\n";
-	print LEAP_COMPLEX "saveamberparm complex$protein_labelR wat"."_$protein_labelR.prmtop wat"."_$protein_labelR.inpcrd\n";
+     print LEAP_COMPLEX "complex$protein_labelQ = combine{protein$protein_labelR ligand$ligand_label}\n";
+     print LEAP_COMPLEX "savepdb complex$protein_labelQ complex_$protein_labelQ.pdb\n";
+     print LEAP_COMPLEX "saveamberparm complex$protein_labelQ vac_$protein_labelQ.prmtop vac_$protein_labelQ.inpcrd\n";
+     print LEAP_COMPLEX "addions complex$protein_labelQ Na+ 0\n"; # only use to charge or neutralize explicit solvent
+	print LEAP_COMPLEX "saveamberparm complex$protein_labelQ ion_$protein_labelQ.prmtop ion_$protein_labelQ.inpcrd\n";
+	print LEAP_COMPLEX "solvateoct complex$protein_labelQ TIP3PBOX 10.0\n";
+	print LEAP_COMPLEX "saveamberparm complex$protein_labelQ wat"."_$protein_labelQ.prmtop wat"."_$protein_labelQ.inpcrd\n";
      print LEAP_COMPLEX "quit\n";
 close LEAP_COMPLEX;
 
@@ -169,12 +170,12 @@ open(TLEAP_LIGAND, '|-', "tleap -f $ligand_label.bat");
 close TLEAP_LIGAND;
 print "  running protein input file for teLeap\n\n";
 sleep(1);
-open(TLEAP_PROTEIN, '|-', "tleap -f $protein_labelQ.bat");
+open(TLEAP_PROTEIN, '|-', "tleap -f $protein_labelR.bat");
 	print<TLEAP_PROTEIN>;
 close TLEAP_PROTEIN;
 print "  running protein-ligand input file for teLeap\n\n";
 sleep(1);
-open(TLEAP_COMPLEX, '|-', "tleap -f $protein_labelR.bat");
+open(TLEAP_COMPLEX, '|-', "tleap -f $protein_labelQ.bat");
 	print<TLEAP_COMPLEX>;
 close TLEAP_COMPLEX;
 

@@ -106,13 +106,13 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID without ligand (e.g. 1hho_unbound) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with ligand (e.g. 1hho_bound) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with ligand (e.g. 1hho_bound) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID without ligand (e.g. 1hho_unbound) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
@@ -895,8 +895,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                           $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_query_avg - $flux_ref_avg);
+					 $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					 # calculate JS divergence
                           open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                           print TMP1 "flux_ref\t"."flux_query\n";
@@ -951,8 +951,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                           $statSCORE->add_data (@QUERYfluxAvg);
 					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					 $delta_flux = ($flux_query_avg - $flux_ref_avg);
+					 $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					 # calculate JS divergence
                           open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                           print TMP1 "flux_ref\t"."flux_query\n";

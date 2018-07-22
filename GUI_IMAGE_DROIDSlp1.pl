@@ -418,9 +418,12 @@ close(OUTPUT);
 print("Attribute file complete\n\n");
 sleep(1);
 print("Renaming and copying topology and binary files for colormapping and rendering\n");
-copy("wat_$refID"."REDUCED.prmtop", "wat_$refID".".prmtop");
-copy("vac_$refID"."REDUCED.prmtop", "vac_$refID".".prmtop");
-copy("prod_$refID"."REDUCED_0.nc", "prod_$refID"."_0.nc");
+copy("wat_$queryID"."REDUCED.prmtop", "wat_$refID".".prmtop");  # note: copying is intentionally reversed to allow for later
+copy("vac_$queryID"."REDUCED.prmtop", "vac_$refID".".prmtop");  # image/movie rendering on query = bound structure
+copy("prod_$queryID"."REDUCED_0.nc", "prod_$refID"."_0.nc");
+copy("wat_$refID"."REDUCED.prmtop", "wat_$queryID".".prmtop");
+copy("vac_$refID"."REDUCED.prmtop", "vac_$queryID".".prmtop");
+copy("prod_$refID"."REDUCED_0.nc", "prod_$queryID"."_0.nc");
 print("copying files complete\n\n");
 }
 

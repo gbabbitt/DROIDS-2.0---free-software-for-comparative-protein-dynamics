@@ -140,12 +140,12 @@ my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
 				-relief => "groove",
 				-borderwidth => 2
 				);
-     my $col1Radio = $seqFrame->Radiobutton(-text=>"color scheme 1 = red/green for dFLUX, blue/white for p-value, yellow for mutation",
+     my $col1Radio = $seqFrame->Radiobutton(-text=>"'stoplight' color scheme = red/green for dFLUX, blue/white for p-value, yellow for mutation",
 						-foreground => 'maroon4',
                               -value=>"c1",
 						-variable=>\$colorScheme
                               );
-	my $col2Radio = $seqFrame->Radiobutton(-text=>"color scheme 2 = blue/yellow for dFLUX, red/white for p-value, red for mutation",
+	my $col2Radio = $seqFrame->Radiobutton(-text=>"'temperature' color scheme = blue/red for dFLUX, red/white for p-value, tan for mutation",
 						-foreground => 'maroon4',
                               -value=>"c2",
 						-variable=>\$colorScheme
@@ -302,12 +302,12 @@ sub ctl {
      if ($attr eq "delta" && $colorScheme eq "c1" ){$colorType = "rg";}
      if ($attr eq "deltaKL" && $colorScheme eq "c1" ){$colorType = "rg";}
      if ($attr eq "pval" && $colorScheme eq "c1" ){$colorType = "bw";}
-     if ($attr eq "delta" && $colorScheme eq "c2" ){$colorType = "yb";}
-     if ($attr eq "deltaKL" && $colorScheme eq "c2" ){$colorType = "yb";}
+     if ($attr eq "delta" && $colorScheme eq "c2" ){$colorType = "br";}
+     if ($attr eq "deltaKL" && $colorScheme eq "c2" ){$colorType = "br";}
      if ($attr eq "pval" && $colorScheme eq "c2" ){$colorType = "rw";}
      if ($homology eq "loose"){$mutType = "gray50";}
      if ($homology eq "strict" && $colorScheme eq "c1"){$mutType = "yellow";}
-     if ($homology eq "strict" && $colorScheme eq "c2"){$mutType = "red";}
+     if ($homology eq "strict" && $colorScheme eq "c2"){$mutType = "tan";}
 
 # make control file for DROIDS	
 print("Making ctl file...\n");

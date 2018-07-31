@@ -73,9 +73,9 @@ central_residue = int(float(lengthID)/2)
 if colorType == "rg":
  min_color = "red"
  max_color = "green"
-if colorType == "yb":
- min_color = "yellow"
- max_color = "blue"
+if colorType == "br":
+ min_color = "blue"
+ max_color = "red"
 if colorType == "om":
  min_color = "orange"
  max_color = "magenta"

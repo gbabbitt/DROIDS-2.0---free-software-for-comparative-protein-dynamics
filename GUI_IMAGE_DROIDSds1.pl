@@ -162,12 +162,12 @@ my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
 				-relief => "groove",
 				-borderwidth => 2
 				);
-     my $col1Radio = $seqFrame->Radiobutton(-text=>"color scheme 1 = red/green for dFLUX, blue/white for p-value, yellow for mutation",
+     my $col1Radio = $seqFrame->Radiobutton(-text=>"'stoplight' color scheme = red/green for dFLUX, blue/white for p-value, yellow for mutation",
 						-foreground => 'maroon4',
                               -value=>"c1",
 						-variable=>\$colorScheme
                               );
-	my $col2Radio = $seqFrame->Radiobutton(-text=>"color scheme 2 = blue/yellow for dFLUX, red/white for p-value, red for mutation",
+	my $col2Radio = $seqFrame->Radiobutton(-text=>"'temperature' color scheme = blue/red for dFLUX, red/white for p-value, tan for mutation",
 						-foreground => 'maroon4',
                               -value=>"c2",
 						-variable=>\$colorScheme
@@ -330,12 +330,12 @@ sub ctl {
      if ($attr eq "delta" && $colorScheme eq "c1" ){$colorType = "rg";}
      if ($attr eq "deltaKL" && $colorScheme eq "c1" ){$colorType = "rg";}
      if ($attr eq "pval" && $colorScheme eq "c1" ){$colorType = "bw";}
-     if ($attr eq "delta" && $colorScheme eq "c2" ){$colorType = "yb";}
-     if ($attr eq "deltaKL" && $colorScheme eq "c2" ){$colorType = "yb";}
+     if ($attr eq "delta" && $colorScheme eq "c2" ){$colorType = "br";}
+     if ($attr eq "deltaKL" && $colorScheme eq "c2" ){$colorType = "br";}
      if ($attr eq "pval" && $colorScheme eq "c2" ){$colorType = "rw";}
      if ($homology eq "loose"){$mutType = "gray50";}
      if ($homology eq "strict" && $colorScheme eq "c1"){$mutType = "yellow";}
-     if ($homology eq "strict" && $colorScheme eq "c2"){$mutType = "red";}
+     if ($homology eq "strict" && $colorScheme eq "c2"){$mutType = "tan";}
 
 # make control file for DROIDS	
 print("Making ctl file...\n");
@@ -357,7 +357,7 @@ print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
 print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
 print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
 print CTL "test_type\t"."$testStr\t # test method (sequence = local Grantham dist, structure = RMSD, fluctuation = MD)\n";
-print CTL "color_scheme\t"."$colorType\t # output color scheme (red-green, yellow-blue, or orange-magenta)\n";
+print CTL "color_scheme\t"."$colorType\t # output color scheme (stoplight=red-green, temperature=blue-red)\n";
 close CTL;
 print("CTL file made\n");
 }

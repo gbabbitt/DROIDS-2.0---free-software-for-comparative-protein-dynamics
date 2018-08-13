@@ -104,13 +104,13 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"query pdb ID with DNA (e.g. 1ytb_ortholog) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_ortholog) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"reference pdb ID with DNA (e.g. 1ytb) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr

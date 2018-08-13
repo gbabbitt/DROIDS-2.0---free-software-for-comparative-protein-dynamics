@@ -103,13 +103,13 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
 	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb) : ");
+		my $QfileLabel = $QfileFrame->Label(-text=>"query pdb ID with DNA (e.g. 1ytb_ortholog) : ");
 		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDq
 					);
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID with DNA (e.g. 1ytb_ortholog) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"reference pdb ID with DNA (e.g. 1ytb) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
@@ -859,8 +859,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $flux_query_avg = $statSCORE->mean();
                               #$flux_query_n = $statSCORE->count();
                               #print "flux_query_n\t"."$flux_query_n\n";
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					     $delta_flux = ($flux_query_avg - $flux_ref_avg); # note ref and query are reversed due to GUI input
+					     $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
                               # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                               print TMP1 "flux_ref\t"."flux_query\n";
@@ -916,8 +916,8 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                               $statSCORE->add_data (@QUERYfluxAvg);
 					     $flux_query_avg = $statSCORE->mean();
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					     $delta_flux = ($flux_query_avg - $flux_ref_avg); # note ref and query are reversed due to GUI input
+					     $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					     # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
                               print TMP1 "flux_ref\t"."flux_query\n";

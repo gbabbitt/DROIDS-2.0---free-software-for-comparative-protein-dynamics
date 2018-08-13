@@ -21,7 +21,7 @@ print "path to teLeap .exe\t"."$teleap_path\n";
 
 print "control file inputs\n\n";
 
-open(IN, "<"."MDq.ctl") or die "could not find MD.ctl control file\n";
+open(IN, "<"."MDr.ctl") or die "could not find MD.ctl control file\n";
 @IN = <IN>;
 for (my $c = 0; $c <= scalar @IN; $c++){
     $INrow = $IN[$c];

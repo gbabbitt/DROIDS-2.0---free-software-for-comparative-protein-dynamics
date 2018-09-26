@@ -148,8 +148,7 @@ print "\n\n";
      }
      }
 	
-
-	
+		
 # Buttons
 
 my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots in R", 
@@ -157,7 +156,6 @@ my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots
                 -background => 'gray45',
                 -foreground => 'white'
 				); # Creates a stats test button
-
 
 my $nextButton = $mw -> Button(-text => "goto DROIDS image and movie rendering", 
 				-command => \&next,
@@ -198,9 +196,12 @@ $ctlButton->pack(-side=>"top",
 $statsButton->pack(-side=>"top",
 			-anchor=>"s"
 			);
+
+
 $noneRadio->pack();
 $bonfRadio->pack();
 $fdrRadio->pack();
+
 
 MainLoop; # Allows Window to Pop Up
 
@@ -209,7 +210,7 @@ MainLoop; # Allows Window to Pop Up
 ########################################################################################
 sub stop {exit;}
 ########################################################################################
-sub next {system "perl GUI_IMAGE_DROIDSss.pl";}
+sub next {system "perl GUI_IMAGE_DROIDSed.pl";}
 ########################################################################################
 sub ctl {
 # make control file for DROIDS	
@@ -225,6 +226,7 @@ print("CTL file made\n");
 }
 
 ########################################################################
+
 
 #################################################################
 
@@ -885,3 +887,5 @@ system "evince ./DROIDS_results_$queryID"."_$refID"."_$seq_struct_flux"."_$level
 
 } # end sub
 
+
+#############################################################################################

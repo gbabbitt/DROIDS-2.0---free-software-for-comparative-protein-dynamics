@@ -83,7 +83,7 @@ if (-e "$protein_label.pdb") { print "$protein_label.pdb found\n"; }
 open(LEAP_PROTEIN, ">"."$protein_label.bat") or die "could not open LEAP file\n";
 	print LEAP_PROTEIN "source "."$teleap_path"."$forcefield\n";
 	print LEAP_PROTEIN "source "."$teleap_path"."leaprc.water.tip3p\n";
-	print LEAP_PROTEIN "protein$protein_label = loadpdb $protein_label.pdb\n";
+     print LEAP_PROTEIN "protein$protein_label = loadpdb $protein_label.pdb\n";
 	print LEAP_PROTEIN "saveamberparm protein$protein_label vac_$protein_label.prmtop vac_$protein_label.inpcrd\n";
 	print LEAP_PROTEIN "addions protein$protein_label Na+ 0\n"; # only use to charge or neutralize explicit solvent
 	print LEAP_PROTEIN "saveamberparm protein$protein_label ion_$protein_label.prmtop ion_$protein_label.inpcrd\n";

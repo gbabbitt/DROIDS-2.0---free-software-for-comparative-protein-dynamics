@@ -307,7 +307,6 @@ sub ctl {
      if ($attr eq "deltaKL" && $colorScheme eq "c2" ){$colorType = "br";}
      if ($attr eq "pval" && $colorScheme eq "c2" ){$colorType = "rw";}
      if ($homology eq "loose"){$mutType = "gray50";}
-     #if ($homology eq "loose"){$mutType = "tan";}
      if ($homology eq "strict" && $colorScheme eq "c1"){$mutType = "yellow";}
      if ($homology eq "strict" && $colorScheme eq "c2"){$mutType = "tan";}
 

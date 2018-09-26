@@ -24,9 +24,7 @@ print "path to Chimera .exe\t"."$chimera_path\n";
 #### Declare variables ####
 my $fileIDq = '';
 my $fileIDr = '';
-my $fileIDl = '';
 my $forceID = '';
-my $dforceID = '';
 my $runsID = '';
 my $implicit=0;
 my $explicit=0;
@@ -38,6 +36,10 @@ my $cutoffValueSalt=0.0;
 my $cutoffValueHeatFS=0;
 my $cutoffValueEqFS=0;
 my $cutoffValueProdFS=0;
+my @fullfile;
+my @chainlen;
+my @fullfile2;
+my @chainlen2;
 
 #### Create GUI ####
 my $mw = MainWindow -> new; # Creates a new main window
@@ -105,47 +107,30 @@ my $solnFrame = $mw->Frame(	-label => "METHOD OF SOLVATION",
 
 # PDB ID Frame				
 my $pdbFrame = $mw->Frame();
-	my $QfileFrame = $pdbFrame->Frame();
-		my $QfileLabel = $QfileFrame->Label(-text=>"pdb ID with ligand (e.g. 1hho_bound) : ");
-		my $QfileEntry = $QfileFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$fileIDq
-					);
+	
 	my $RfileFrame = $pdbFrame->Frame();
-		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID without ligand (e.g. 1hho_unbound) : ");
+		my $RfileLabel = $RfileFrame->Label(-text=>"pdb ID reference (e.g. 1ubq) : ");
 		my $RfileEntry = $RfileFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-	my $LfileFrame = $pdbFrame->Frame();
-		my $LfileLabel = $LfileFrame->Label(-text=>"pdb ID for ligand (e.g. 1hho_ligand) : ");
-		my $LfileEntry = $LfileFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$fileIDl
-					);	
 	my $forceFrame = $pdbFrame->Frame();
-		my $forceLabel = $forceFrame->Label(-text=>"protein force field (e.g. leaprc.protein.ff14SB): ");
+		my $forceLabel = $forceFrame->Label(-text=>"Force Field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$forceID
 					);
-      my $dforceFrame = $pdbFrame->Frame();
-		my $dforceLabel = $dforceFrame->Label(-text=>"ligand force field (e.g. leaprc.gaff2): ");
-		my $dforceEntry = $dforceFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$dforceID
-					);    
 	my $runsFrame = $pdbFrame->Frame();
 		my $runsLabel = $runsFrame->Label(-text=>"number of repeated MD sample runs: ");
 		my $runsEntry = $runsFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$runsID
 					);
-     my $lengthFrame = $pdbFrame->Frame();
-		my $lengthLabel = $lengthFrame->Label(-text=>"length of protein (no. of AA's): ");
-		my $lengthEntry = $lengthFrame->Entry(-borderwidth => 2,
+    my $chainFrame = $pdbFrame->Frame();
+		my $chainLabel = $chainFrame->Label(-text=>"number of chains in structure (e.g. 3 = A/B/C): ");
+		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
-					-textvariable=>\$lengthID
+					-textvariable=>\$chainN
 					);
 	my $startFrame = $pdbFrame->Frame();
 		my $startLabel = $startFrame->Label(-text=>"start numbering AA's on chain at (e.g. 1): ");
@@ -174,15 +159,12 @@ my $killButton = $mw -> Button(-text => "kill MD run (pmemd.cuda) on GPU",
 my $survButton = $mw -> Button(-text => "open GPU job survellience", 
 				-command => \&surv
 				); # Creates a surv button
-my $mutButton = $mw -> Button(-text => "create mutant PDB files", 
+my $mutButton = $mw -> Button(-text => "create mutant PDB file", 
 				-command => \&mutate
 				); # Creates a mutation file  button
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
-my $antechamberButton = $mw -> Button(-text => "estimate/prepare ligand force field modification (antechamber)", 
-				-command => \&antechamber
-				); # Creates a antechamber button
 my $reduceButton = $mw -> Button(-text => "dry and reduce structure (run pdb4amber)", 
 				-command => \&reduce
 				); # Creates a pdb4amber button
@@ -218,19 +200,19 @@ $fluxButton->pack(-side=>"bottom",
 $infoButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$killButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $launchButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $teLeapButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$antechamberButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		);
-$reduceButton->pack(-side=>"bottom",
+$controlButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $mutButton->pack(-side=>"bottom",
@@ -239,46 +221,33 @@ $mutButton->pack(-side=>"bottom",
 $mutlistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$killButton->pack(-side=>"bottom",
+$reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $survButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$controlButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
 
-$QfileLabel->pack(-side=>"left");
-$QfileEntry->pack(-side=>"left");
+
+
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
-$LfileLabel->pack(-side=>"left");
-$LfileEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
-$dforceLabel->pack(-side=>"left");
-$dforceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
 $runsEntry->pack(-side=>"left");
-$lengthLabel->pack(-side=>"left");
-$lengthEntry->pack(-side=>"left");
+$chainLabel->pack(-side=>"left");
+$chainEntry->pack(-side=>"left");
 $startLabel->pack(-side=>"left");
 $startEntry->pack(-side=>"left");
 
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
-$dforceFrame->pack(-side=>"top",
-		-anchor=>"e");
-$QfileFrame->pack(-side=>"top",
-		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
-		-anchor=>"e");
-$LfileFrame->pack(-side=>"top",
 		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
-$lengthFrame->pack(-side=>"top",
+$chainFrame->pack(-side=>"top",
 		-anchor=>"e");
 $startFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -312,27 +281,91 @@ sub control { # Write a control file and then call appropriate scripts that refe
 	$cutoffValueEqFS = $cutoffValueEq*1000000;
 	$cutoffValueProdFS = $cutoffValueProd*1000;
 
-### make qury protein control file ###	
+   
+### make query protein control file ###
+
+### get chain information from PDB
+## read in .pdb file
+open(INPUTFILE, $fileIDq."REDUCED.pdb");
+    # load input into array
+    #print"success";
+    chomp(@fullfile = <INPUTFILE>);
+    close(INPUTFILE);
+
+my $count = 0;
+for(my $line = 0; $line < scalar @fullfile; $line++){
+    ## go down first column until you hit TER
+    chomp($fullfile[$line]);
+    my @entry = (split (/\s+/, $fullfile[$line]));
+    if ($entry[0] eq "TER") {
+        # get each chain length
+        my $len = $entry[4];
+        if ($len eq ''){$len = $entry[3]; $len =~ s/\D//g;}  #fixes concatenation of chain ID and residue number when > 1000
+        $chainlen[$count] = $len;
+        #print "$chainlen[$count]\n";
+        $count++;
+    }
+}
+### write control file
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
-LIGAND_ID\t".$fileIDl."REDUCED\t# Protein Data Bank ID for MD run
-Force_Field\t$forceID\t# AMBER force field to use in MD runs
-LIGAND_Field\t$dforceID\t# AMBER force field to use in MD runs
+Number_Chains\t$chainN\t# Number of chains on structure\n";
+for(my $ent = 0; $ent < scalar @chainlen; $ent++){
+    my $chain = chr($ent + 65);
+    print $ctlFile1 "length$chain\t$chainlen[$ent]\t #end of chain designated\n";
+    print "MDq.ctl\n";
+    print "length$chain\t$chainlen[$ent]\t #end of chain designated\n";
+}
+print $ctlFile1
+"Force_Field\t$forceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
 Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
-Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
+Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)
+Temperature_Query\t$tempQ\t# temperature of query run (300K is same as ref run)";
 close $ctlFile1;
-### make qury protein control file ###	
+
+### make ref protein control file ###
+## extract information from PDB
+open(INPUTFILE2, $fileIDr."REDUCED.pdb");
+    # load input into array
+    chomp(@fullfile2 = <INPUTFILE2>);
+    close(INPUTFILE2);
+
+my $count = 0;
+for(my $line = 0; $line < scalar @fullfile2; $line++){
+    ## go down first column until you hit TER
+    chomp($fullfile2[$line]);
+    my @entry = (split (/\s+/, $fullfile2[$line]));
+    if ($entry[0] eq "TER") {
+        # get each chain length
+        my $len = $entry[4];
+        if ($len eq ''){$len = $entry[3]; $len =~ s/\D//g;} #fixes concatenation of chain ID and residue number when > 1000
+        $chainlen2[$count] = $len;
+        #print "$count\t$chainlen2[$count]\n";
+        $count++;
+    }
+}
+## write to control file
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
-LIGAND_ID\t".$fileIDl."REDUCED\t# Protein Data Bank ID for MD run
-Force_Field\t$forceID\t# AMBER force field to use in MD runs
-LIGAND_Field\t$dforceID\t# AMBER force field to use in MD runs
+Number_Chains\t$chainN\t# Number of chains on structure\n";
+for(my $cnt = 0; $cnt < scalar @chainlen2; $cnt++){
+    my $chain = chr($cnt + 65);
+    #print "$cnt";
+    #print "$chainlen2[$cnt]\n";
+    #print "length$chain\t$chainlen2[$cnt]\n";
+    print $ctlFile2 "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    print "MDr.ctl\n";
+    print "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    
+}
+print $ctlFile2
+"Force_Field\t$forceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
@@ -418,7 +451,7 @@ print "\n\ncpptraj control files is made\n\n";
 ##########################################
 # make control file for DROIDS	
 sleep(0.5);
-print("Making ctl file...\n");
+print("Making DROIDS.ctl file...\n");
 	if ($ribbon == 1 && $surface == 0) {$repStr = "ribbon";}  # opaque ribbon rep only
 	if ($surface == 1 && $ribbon == 0) {$repStr =  "surface";} # opaque surface rep only
 	if ($surface == 1 && $ribbon == 1) {$repStr =  "ribbonsurface";} # opaque ribbon with transparent surface
@@ -428,7 +461,20 @@ print("Making ctl file...\n");
 open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "query\t"."$fileIDq\t # Protein Data Bank ID for query structure\n";
 print CTL "reference\t"."$fileIDr\t # Protein Data Bank ID for reference structure (or neutral model)\n";
-print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+#print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+print CTL "num_chains\t"."$chainN\t # number of chains in structure\n";
+$chainTTL = 0;
+for(my $cnt = 0; $cnt < scalar @chainlen2; $cnt++){
+    my $chain = chr($cnt + 65);
+    #print "$cnt";
+    #print "$chainlen2[$cnt]\n";
+    #print "length$chain\t$chainlen2[$cnt]\n";
+    print CTL "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    print "DROIDS.ctl\n";
+    print "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    $chainTTL = $chainlen2[$cnt];
+}
+print CTL "length\t"."$chainTTL\t # total length of chain\n";
 print CTL "start\t"."$startN\t # number of AA at start of chain\n";
 #print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
 #print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
@@ -437,36 +483,36 @@ print CTL "start\t"."$startN\t # number of AA at start of chain\n";
 close CTL;
 print("DROIDS ctl file is made\n");
 ##############################################
+#  create list of chain labels
+##############################################
+@alphabet = ("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+@chainlist = ();
+if($chainN > 26) {print "warning - number of chains exceeds alphabet\n";}
+for(my $l = 0; $l < $chainN; $l++){
+     $letter = $alphabet[$l];
+     push(@chainlist, $letter);
+     }
+print "chains in structure are...\n";
+print @chainlist;
+print "\n\n";
 
-}
+print "NOTE: if chains reported by reduced PDB file have more than 1000 amino acids,\n";
+print "OR if the chain designations look as if they have been calculated incorrectly\n";
+print "you will need to edit...re-enter lengths manually in MDq.ctl, MDr.ctl, DROIDS.ctl\n\n";
+##############################################
+}  # end sub
+
 
 #####################################################################################################
 
 sub mutate{
-# create mutate_protein.cmd script
-open (LST, "<"."mutate_list.txt") || die "could not find mutate_list_trans.txt\n";
-@LST = <LST>;
-#mutate unbound protein
-open(MUT, ">"."mutate_protein_unbound.cmd");
-print MUT "open $fileIDq".".pdb\n";
-    for (my $l = 0; $l < scalar @LST; $l++){
-        if ($l == 0){next;}
-        $LSTrow = $LST[$l];
-        @LSTrow = split(/\s+/, $LSTrow);
-        $subsTYPE = $LSTrow[0];
-        $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
-        }
-print MUT "write 0 $fileIDq"."mut.pdb\n";
-close MUT;
-# run mutate_protein.cmd script
-system("$chimera_path"."chimera --nogui mutate_protein_unbound.cmd > mutate_protein_unbound.log\n");
-print "\nmutant protein PDB file was created for unbound protein\n";
 
-#mutate bound protein
-open(MUT, ">"."mutate_protein_bound.cmd");
-print MUT "open $fileIDr".".pdb\n";
-    for (my $l = 0; $l < scalar @LST; $l++){ #trans reg mutations
+# create mutate_protein.cmd script
+open (LST, "<"."mutate_list.txt") || die "could not find mutate_list.txt\n";
+@LST = <LST>;
+open(MUT, ">"."mutate_protein.cmd");
+print MUT "open $fileIDr"."REDUCED.pdb\n";
+    for (my $l = 0; $l < scalar @LST-1; $l++){
         if ($l == 0){next;}
         $LSTrow = $LST[$l];
         @LSTrow = split(/\s+/, $LSTrow);
@@ -474,15 +520,15 @@ print MUT "open $fileIDr".".pdb\n";
         $subsPOS = $LSTrow[1];
         print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
         }
-print MUT "write 0 $fileIDr"."mut.pdb\n";
+print MUT "write 0 $fileIDr"."mutREDUCED.pdb\n";
 close MUT;
+
 # run mutate_protein.cmd script
-system("$chimera_path"."chimera --nogui mutate_protein_bound.cmd > mutate_protein_bound.log\n");
-print "\nmutant protein PDB file was created for bound protein\n";
+system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
+print "\nmutant protein PDB file was created\n";
 
 # rerun ctl files again after specifying mutant as new query
-$fileIDr = "$fileIDr"."mut";
-$fileIDq = "$fileIDq"."mut";
+$fileIDq = "$fileIDr"."mut";
 control;
 print "\nall control files are updated\n\n";
 }
@@ -513,49 +559,29 @@ print "\nmutant list file (mutate_list.txt) was created\n";
 #####################################################################################################
 
 sub teLeap { # create topology and coordinate files 
-system "perl teLeap_ligandproteinQuery.pl\n";
-system "perl teLeap_ligandproteinReference.pl\n";
+system "perl teLeap_proteinQuery.pl\n";
+system "perl teLeap_proteinReference.pl\n";
 my $filecheck1 = "vac_".$fileIDq."REDUCED.prmtop";
-my $filecheck3 = "vac_".$fileIDr."REDUCED.prmtop";
-my $filecheck2 = "wat_".$fileIDq."REDUCED.inpcrd";
+my $filecheck2 = "vac_".$fileIDr."REDUCED.prmtop";
+my $filecheck3 = "wat_".$fileIDq."REDUCED.inpcrd";
 my $filecheck4 = "wat_".$fileIDr."REDUCED.inpcrd";
-my $filecheck5 = "vac_".$fileIDl."REDUCED.prmtop";
-my $filecheck6 = "wat_".$fileIDl."REDUCED.inpcrd";
 my $size1 = -s $filecheck1;
 my $size2 = -s $filecheck2;
 my $size3 = -s $filecheck3;
 my $size4 = -s $filecheck4;
-my $size5 = -s $filecheck5;
-my $size6 = -s $filecheck6;
-print "$size1\t"."$size2\t"."$size3\t"."$size4\t"."$size5\t"."$size6\n";
-if ($size1 <= 10 || $size2 <= 10 || $size3 <= 10 || $size4 <= 10 || $size5 <= 10 || $size6 <= 10){print "teLeap may have failed (double check pdb files for problems)\n";}
+print "$size1\t"."$size2\t"."$size3\t"."$size4\n";
+if ($size1 <= 10 || $size2 <= 10 || $size3 <= 10 || $size4 <= 10){print "teLeap may have failed (double check pdb files for problems)\n";}
 else {print "teLeap procedure appears to have run (double check .prmtop and .inpcrd files)\n";}
 }
 
 ######################################################################################################
 sub reduce { # create topology and coordinate files 
+# copy + rename ref PDB before mutating 
+copy($fileIDr.".pdb", $fileIDr."mut.pdb");
+$fileIDq = $fileIDr."mut"; # redefine label
 system "pdb4amber -i $fileIDq.pdb -o ".$fileIDq."REDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
-system "pdb4amber -i $fileIDl.pdb -o ".$fileIDl."REDUCED.pdb --dry --reduce \n";
-sleep(1);
-print "\n\npdb4amber is completed\n\n";
 }
-######################################################################################################
-sub antechamber {
-print "\n\n==========================================================================\n";
-print "\nrunning 'antechamber' package...QMMM calculations may take several minutes\n";
-print "note: if this step fails, be sure your ligand PDB comprises ONLY a single unit\n";
-print "note: also be sure to inspect warning messages on the terminal\n\n";
-print "\n============================================================================\n\n";
-sleep(5);
-system "antechamber -i $fileIDl"."REDUCED.pdb -fi pdb -o $fileIDl"."REDUCED.mol2 -fo mol2 -c bcc -s 2\n";
-sleep(1);
-print "running parmchk to test if all parameters required are available";
-system "parmchk -i $fileIDl"."REDUCED.mol2 -f mol2 -o $fileIDl"."REDUCED.frcmod\n";
-sleep(1);
-print "\n\nparmchk is completed\n\n";
-}
-
 
 ######################################################################################################
 
@@ -582,11 +608,10 @@ system "x-terminal-emulator -e nvidia-smi -l 20\n";
 }
 
 ######################################################################################################
-
 sub align{
 
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
-print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
+print "STEP 2 - Then run Match-Align in UCSF Chimera for each chain\n\n";
 print "            if satisfied with alignment, save as a clustal file\n";
 print "            (e.g. my_align.aln)\n\n";
 
@@ -599,7 +624,10 @@ print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
 system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n");
 # properly rename .aln file for DROIDS  
-print "\nPlease enter name of your saved alignment file (e.g my_align.aln)\n";
+$chainlabel = '';
+for (my $cl = 0; $cl < scalar @chainlist; $cl++){
+     $chainlabel = $chainlist[$cl];
+print "\nPlease enter name of your saved chain $chainlabel alignment file (e.g my$chainlabel"."_align.aln)\n";
 my $align_name = "";
 my $align_file = <STDIN>;
 chop($align_file);
@@ -617,12 +645,27 @@ for (my $i = 0; $i < scalar @IN; $i++){
       if ($header eq "CLUSTAL"){$align_name = $ref_header;}
       }
 my @name_segment = split (/REDUCED/, $align_name);
-$split_name = $name_segment[0]."_align.aln";
+if ($chainlabel eq "A"){$pdb_name = $name_segment[0];}
+$split_name = $name_segment[0]."_align".$chainlabel.".aln";
 $oldfilename = $align_file;
 $newfilename = $split_name;
 print "copying $align_file"." to $split_name\n";
 # rename file with header
 copy($oldfilename, $newfilename);
+}
+# create concatenated .aln master file
+open (OUT, ">"."$pdb_name"."_align.aln");
+for (my $ccl = 0; $ccl < scalar @chainlist; $ccl++){
+     $chainlabel = $chainlist[$ccl];
+     open (IN, "<"."$pdb_name"."_align".$chainlabel.".aln");
+     my @IN = <IN>;
+     print OUT @IN;
+     print OUT "\n";
+     #print @IN;
+     #print "\n";
+     close IN;
+     }    
+close OUT;
 ################
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
@@ -631,7 +674,7 @@ sleep(0.5);
 }
 
 
-###################################################################################################
+######################################################################################################
 
 sub info { # launch atom info
 system("cpptraj "."-i ./atominfo_$fileIDq"."_0.ctl | tee cpptraj_atominfo_$fileIDq.txt");
@@ -708,7 +751,8 @@ my $position = 0;
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+     my $target = $fileIDr."REDUCED";
+	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -755,7 +799,8 @@ my @gDISTS = ();
 for (my $i = 0; $i < scalar @IN1; $i++){
 	my $IN1row = $IN1[$i];
 	my $IN1nextrow = $IN1[$i+1];
-	if ($IN1row =~ m/$fileIDr/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
+     my $target = $fileIDr."REDUCED";
+	if ($IN1row =~ m/$target/){my @IN1row = split(/\s+/, $IN1row); $header_ref = $IN1row[0]; $seq_ref =$IN1row[1]; print "$header_ref\t"."$seq_ref\n";
 															my @IN1nextrow = split(/\s+/, $IN1nextrow); $header_query = $IN1nextrow[0]; $seq_query =$IN1nextrow[1]; print "$header_query\t"."$seq_query\n";
 															my @seq_ref = split(//,$seq_ref);
 															my @seq_query = split(//,$seq_query);
@@ -947,11 +992,18 @@ print "          (this will allow sites of mutations to be visualized later)\n\n
 print " loose  = collect any aligned residues\n";
 print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n"; 
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
+## choose homology
 #my $homology = <STDIN>;
 #chop($homology);
-print "for mutations on simple protein-ligand interaction analysis 'homology' will be strict\n";
+
+#$homology = "loose";
+#print "\nHOMOLOGY WILL BE LOOSE FOR THIS ANALYSIS\n\n";
+#sleep(2);
+
 $homology = "strict";
+print "\nHOMOLOGY WILL BE STRICT FOR THIS ANALYSIS\n\n";
 sleep(2);
+
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
@@ -1000,7 +1052,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $flux_query_avg = $statSCORE->mean();
                               #$flux_query_n = $statSCORE->count();
                               #print "flux_query_n\t"."$flux_query_n\n";
-					     $delta_flux = ($flux_query_avg - $flux_ref_avg); # note ref and query are reversed due to GUI input
+					     $delta_flux = ($flux_query_avg - $flux_ref_avg);
 					     $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
                               # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
@@ -1057,7 +1109,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                               $statSCORE->add_data (@QUERYfluxAvg);
 					     $flux_query_avg = $statSCORE->mean();
-					     $delta_flux = ($flux_query_avg - $flux_ref_avg); # note ref and query are reversed due to GUI input
+					     $delta_flux = ($flux_query_avg - $flux_ref_avg);
 					     $abs_delta_flux = abs($flux_query_avg - $flux_ref_avg);
 					     # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
@@ -1114,8 +1166,58 @@ sleep(2);
 ##################################################################################################
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
+#################################################################################################
+# create chain ID column DROIDSfluctuationAVG.txt and make chain specific output data files
 
-system "perl GUI_STATS_DROIDSlp2.pl\n";	
+print " reading control file to get chain lengths\n\n";
+@lengthlist = ();
+$chainlabel = '';
+for (my $cl = 0; $cl < scalar @chainlist; $cl++){
+     $chainlabel = $chainlist[$cl];
+
+my $AA_count = '';
+
+open(IN, "<"."DROIDS.ctl") or die "could not find CPPTRAJ input control file\n";
+my @IN = <IN>;
+for (my $c = 0; $c <= scalar @IN; $c++){
+    my $INrow = $IN[$c];
+    my @INrow = split (/\s+/, $INrow);
+    my $header = $INrow[0];
+    my $value = $INrow[1];
+    #print "$header\t"."$value\n";
+    if ($header eq "length$chainlabel") { $AA_count = $value; push (@lengthlist, $AA_count);}
+}
+close IN;
+sleep(1);
+}
+print @chainlist;
+print @lengthlist;
+print "\n\n";
+$pointer = 0;
+$mychain = $chainlist[$pointer];
+$mylength = $lengthlist[$pointer];
+$prevlength = 0;
+open(OUT, ">"."DROIDSfluctuationAVGchain.txt") or die "could open DROIDS DATA file\n";
+open(IN, "<"."DROIDSfluctuationAVG.txt") or die "could not find DROIDS DATA file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+      chomp $INrow;
+      my @INrow = split (/\s+/, $INrow);
+	 if ($i == 0){print OUT "$INrow\t"."chain\n";}
+      my $header = $INrow[0];
+      #print "$header\t"."$mylength\t"."$mychain\n";
+      if ($i > 0 && $header > $mylength){$pointer = $pointer+1; $mychain = $chainlist[$pointer]; $mylength = $lengthlist[$pointer];}
+      if ($i > 0 && $header <= $mylength){print OUT "$INrow\t"."$mychain\n";}
+      }
+close IN;
+sleep(1);
+close OUT;
+sleep(1);
+print "chain lengths added to DROIDSfluctuationAVGchain.txt file\n\n";
+
+#################################################################################################
+system "perl GUI_STATS_DROIDSsdm.pl\n";	
 }
 
 ##################################################################################################

@@ -4,6 +4,7 @@ use Tk;
 #use warnings;
 use feature ":5.10";
 use Descriptive();
+use File::Copy;
 
 # specify the path to working directory for Chimera here
 open(IN, "<"."paths.ctl") or die "could not find paths.txt file\n";
@@ -465,8 +466,8 @@ sub align{
 
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
 print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
-print "            if satisfied with alignment, save as a clustal file with ref PDB ID\n";
-print "            in title (e.g. 1ytb_align.aln)\n\n";
+print "            if satisfied with alignment, save as a clustal file\n";
+print "            (e.g. my_align.aln)\n\n";
 
 print "continue? (y/n)\n";
 my $go = <STDIN>;
@@ -476,12 +477,38 @@ sleep(1);
 print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
 system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n");
-
+# properly rename .aln file for DROIDS  
+print "\nPlease enter name of your saved alignment file (e.g my_align.aln)\n";
+my $align_name = "";
+my $align_file = <STDIN>;
+chop($align_file);
+sleep(1);
+# open and read first line header
+open(IN, "<"."$align_file") or die "could not find alignment file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+      my $refINrow = $IN[$i+2];
+	 my @INrow = split (/\s+/, $INrow);
+	 my @refINrow = split (/\s+/, $refINrow);
+      my $header = $INrow[0];
+      my $ref_header = $refINrow[0];
+      if ($header eq "CLUSTAL"){$align_name = $ref_header;}
+      }
+my @name_segment = split (/REDUCED/, $align_name);
+$split_name = $name_segment[0]."_align.aln";
+$oldfilename = $align_file;
+$newfilename = $split_name;
+print "copying $align_file"." to $split_name\n";
+# rename file with header
+copy($oldfilename, $newfilename);
+################
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
 sleep(0.5);
 	
 }
+
 
 ###################################################################################################
 
@@ -802,6 +829,10 @@ print "          (this will NOT allow sites of mutations to be visualized later)
 my $homology = <STDIN>;
 chop($homology);
 
+print "for simple DNA-protein interaction analysis 'homology' will be loose\n";
+$homology = "loose";
+sleep(2);
+
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
 close CTL;
@@ -849,7 +880,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $flux_query_avg = $statSCORE->mean();
                               #$flux_query_n = $statSCORE->count();
                               #print "flux_query_n\t"."$flux_query_n\n";
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
+					     $delta_flux = ($flux_ref_avg - $flux_query_avg); # note: ref and query are reversed due to GUI input
 					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
                               # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
@@ -906,7 +937,7 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
                               $statSCORE->add_data (@QUERYfluxAvg);
 					     $flux_query_avg = $statSCORE->mean();
-					     $delta_flux = ($flux_ref_avg - $flux_query_avg);
+					     $delta_flux = ($flux_ref_avg - $flux_query_avg);  # note: ref and query are reversed due to GUI input
 					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
 					     # calculate JS divergence
                               open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";

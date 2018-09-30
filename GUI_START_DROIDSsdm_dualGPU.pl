@@ -36,10 +36,10 @@ my $cutoffValueSalt=0.0;
 my $cutoffValueHeatFS=0;
 my $cutoffValueEqFS=0;
 my $cutoffValueProdFS=0;
-my @fullfile;
-my @chainlen;
-my @fullfile2;
-my @chainlen2;
+my @fullfile = ();
+my @chainlen = ();
+my @fullfile2 = ();
+my @chainlen2 = ();
 
 #### Create GUI ####
 my $mw = MainWindow -> new; # Creates a new main window
@@ -529,8 +529,7 @@ print "\nmutant protein PDB file was created\n";
 
 # rerun ctl files again after specifying mutant as new query
 $fileIDq = "$fileIDr"."mut";
-control;
-print "\nall control files are updated\n\n";
+
 }
 #####################################################################################################
 

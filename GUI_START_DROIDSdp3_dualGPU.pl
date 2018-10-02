@@ -139,7 +139,7 @@ my $pdbFrame = $mw->Frame();
 					-textvariable=>\$runsID
 					);
      my $chainFrame = $pdbFrame->Frame();
-		my $chainLabel = $chainFrame->Label(-text=>"number of protein chains (e.g. 3 = A/B/C): ");
+		my $chainLabel = $chainFrame->Label(-text=>"number of DNA and protein chains (e.g. 3 = A/B/C): ");
 		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$chainN
@@ -283,8 +283,7 @@ sub stop {exit;}
 sub control { # Write a control file and then call appropriate scripts that reference control file
 
 print "/nIMPORTANT: prior to analyses, remove TER lines for all DNA chains \n";
-print "from $fileIDr"."REDUCED.pdb PDB file, and'\n";
-print "from $fileIDq"."REDUCED.pdb PDB file, then type 'done'\n\n";
+print "from $fileIDr"."REDUCED.pdb PDB file, then type 'done'\n\n";
 system "gedit $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n";
 my $done = <STDIN>;
 chop($done);

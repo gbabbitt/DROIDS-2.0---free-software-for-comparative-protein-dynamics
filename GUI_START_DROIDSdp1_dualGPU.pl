@@ -283,7 +283,7 @@ sub stop {exit;}
 
 sub control { # Write a control file and then call appropriate scripts that reference control file
 
-print "/nIMPORTANT: prior to analyses, remove TER lines for all DNA chains \n";
+print "IMPORTANT: prior to analyses, remove TER lines for all DNA chains \n";
 print "from $fileIDr"."REDUCED.pdb PDB file, then type 'done'\n\n";
 system "gedit $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n";
 my $done = <STDIN>;

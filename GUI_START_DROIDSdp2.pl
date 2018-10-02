@@ -445,6 +445,10 @@ print "ENTER THE OFFSET VALUE HERE TO PUT MUTATIONS IN SAME PLACE IN BOUND AND U
 my $offset = <STDIN>;
 chop($offset);
 
+# open file for offset positions in bound PDB file
+open(MUT2, ">"."mutate_list_trans_offset.txt");
+print MUT2 "substitution\t"."position\n";
+
 # create mutate_protein.cmd script
 open (LST, "<"."mutate_list_trans.txt") || die "could not find mutate_list_trans.txt\n";
 @LST = <LST>;
@@ -487,7 +491,8 @@ print MUT "open $fileIDr"."REDUCED.pdb\n";
         @LSTrow = split(/\s+/, $LSTrow);
         $subsTYPE = $LSTrow[0];
         $subsPOS = $LSTrow[1] + $offset;
-        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";}
+        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+                              print MUT2 "$subsTYPE\t"."$subsPOS\n";}
         }
     for (my $l = 0; $l < scalar @LST2; $l++){ # cis reg mutations
         if ($l == 0){next;}
@@ -499,6 +504,7 @@ print MUT "open $fileIDr"."REDUCED.pdb\n";
         }
 print MUT "write 0 $fileIDr"."REDUCED.pdb\n";
 close MUT;
+close MUT2;
 
 # run mutate_protein.cmd script
 sleep (1);

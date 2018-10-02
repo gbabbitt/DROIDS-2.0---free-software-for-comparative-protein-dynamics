@@ -266,7 +266,7 @@ print "collecting local atom fluctuations near points of mutation\n";
 sleep(1);
 open(OUT1, ">"."mutate_flux.txt") or die "could not open output file\n";
 print OUT1 "mut_number\t"."subsLOCATION\t"."posAA\t"."refAA\t"."queryAA\t"."atomTYPE\t"."flux_ref\t"."flux_query\n";
-open(MUT, "<"."mutate_list.txt") or die "could not find list of mutations\n";
+open(MUT, "<"."mutate_list_offset.txt") or die "could not find list of mutations\n";
 my @MUT = <MUT>;
 for (my $m = 0; $m <= scalar @MUT; $m++){
   my $MUTrow = $MUT[$m];
@@ -305,7 +305,7 @@ print "collecting local atom fluctuations from normally bound interaction\n";
 sleep(1);
 open(OUT1, ">"."mutate_flux_normal.txt") or die "could not open output file\n";
 print OUT1 "mut_number\t"."subsLOCATION\t"."posAA\t"."refAA\t"."queryAA\t"."atomTYPE\t"."flux_ref\t"."flux_query\n";
-open(MUT, "<"."mutate_list.txt") or die "could not find list of mutations\n";
+open(MUT, "<"."mutate_list_offset.txt") or die "could not find list of mutations\n";
 my @MUT = <MUT>;
 for (my $m = 0; $m <= scalar @MUT; $m++){
   my $MUTrow = $MUT[$m];
@@ -470,8 +470,8 @@ print Rinput "data\n";
 
 # barplot
 print Rinput "d1 = data.frame(location=$location, effect=factor($effect), AAquery=factor($queryAA),label=factor($label), Yval=$KLdivergence)\n";
-print Rinput "myplot1 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=effect)) + xlim(0, $lengthID) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
-print Rinput "myplot2 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=label)) + xlim(0, $lengthID) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
+print Rinput "myplot1 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=effect)) + xlim(0, $lengthID+10) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
+print Rinput "myplot2 <- ggplot(data = d1, mapping = aes(x = location, y = Yval, fill=label)) + xlim(0, $lengthID+10) + labs(x = 'position (residue number)', y = 'mutational impact = KL distance') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(4.0, 'mm'),legend.text = element_text(size = 8), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
 
 print Rinput "library(grid)\n";
 print Rinput "pushViewport(viewport(layout = grid.layout(2, 1)))\n";

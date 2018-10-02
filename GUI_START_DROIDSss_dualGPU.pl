@@ -141,7 +141,7 @@ my $pdbFrame = $mw->Frame();
 					-textvariable=>\$runsID
 					);
      my $chainFrame = $pdbFrame->Frame();
-		my $chainLabel = $chainFrame->Label(-text=>"number of chains in structure (e.g. 3 = A/B/C): ");
+		my $chainLabel = $chainFrame->Label(-text=>"number of protein chains (e.g. 3 = A/B/C): ");
 		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$chainN
@@ -506,8 +506,7 @@ print "chains in structure are...\n";
 print @chainlist;
 print "\n\n";
 
-print "NOTE: if chains reported by reduced PDB file have more than 1000 amino acids,\n";
-print "OR if the chain designations look as if they have been calculated incorrectly\n";
+print "NOTE: if the chain designations look as if they have been calculated incorrectly\n";
 print "you will need to edit...re-enter lengths manually in MDq.ctl, MDr.ctl, DROIDS.ctl\n\n";
 ##############################################
 }  # end sub

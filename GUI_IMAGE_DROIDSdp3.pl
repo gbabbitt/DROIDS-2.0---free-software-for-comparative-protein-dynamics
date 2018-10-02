@@ -75,6 +75,7 @@ for (my $i = 0; $i < scalar @IN; $i++){
       if ($header eq "cutoff_value"){$cutoffValue = $value;}
       if ($header eq "test_type"){$testStr = $value;}
       if ($header eq "homology"){$homology = $value;}
+      if ($header eq "num_chains"){$chainN = $value;}
 }
 close IN;
 
@@ -321,6 +322,7 @@ open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
 print CTL "query\t"."$queryID\t # Protein Data Bank ID for query structure\n";
 print CTL "reference\t"."$refID\t # Protein Data Bank ID for reference structure (or neutral model)\n";
 print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+print CTL "num_chains\t"."$chainN\t # number chains in PDB structure\n";
 print CTL "homology\t"."$homology\t # homology as 'strict' or 'loose'\n";
 print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
 print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
@@ -347,11 +349,11 @@ if($attr eq "dval") {
 }
 
 if($attr eq "delta") {
-	$input_file = "DROIDS$testStrLong"."AVG.txt";
+	$input_file = "DROIDS$testStrLong"."AVGchain.txt";
 	$relevant_column = 5;
 }
 if($attr eq "deltaKL") {
-	$input_file = "DROIDS$testStrLong"."AVG.txt";
+	$input_file = "DROIDS$testStrLong"."AVGchain.txt";
 	$relevant_column = 7;
 }
 if($attr eq "gdist") {

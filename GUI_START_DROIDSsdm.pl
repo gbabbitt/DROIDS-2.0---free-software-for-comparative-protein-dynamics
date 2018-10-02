@@ -206,10 +206,10 @@ $teLeapButton->pack(-side=>"bottom",
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		);
-$reduceButton->pack(-side=>"bottom",
+$mutButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$mutButton->pack(-side=>"bottom",
+$reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $mutlistButton->pack(-side=>"bottom",
@@ -403,33 +403,49 @@ print("DROIDS ctl file is made\n");
 }
 
 #####################################################################################################
-
 sub mutate{
+
 # create mutate_protein.cmd script
 open (LST, "<"."mutate_list.txt") || die "could not find mutate_list.txt\n";
 @LST = <LST>;
 open(MUT, ">"."mutate_protein.cmd");
-print MUT "open $fileIDr".".pdb\n";
+print MUT "open $fileIDr"."REDUCED.pdb\n";
     for (my $l = 0; $l < scalar @LST; $l++){
         if ($l == 0){next;}
         $LSTrow = $LST[$l];
         @LSTrow = split(/\s+/, $LSTrow);
         $subsTYPE = $LSTrow[0];
         $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";}
         }
-print MUT "write 0 $fileIDr"."mut.pdb\n";
+print MUT "write 0 $fileIDr"."mutREDUCED.pdb\n";
 close MUT;
 
 # run mutate_protein.cmd script
+sleep (1);
 system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
-print "\nmutant protein PDB file was created\n";
+print "\nmutant protein PDB file was created = $fileIDq.REDUCED.pdb \n";
+
+# specifying mutant as new query
+$fileIDq = "$fileIDr"."mut";
+
+# reducing new mutations and check
+sleep (1);
+print "\nreducing new mutations that were added\n";
+sleep (1);
+system "pdb4amber -i". $fileIDq."REDUCED.pdb -o ".$fileIDq."REDUCEDtemp.pdb --reduce \n";
+copy($fileIDq."REDUCEDtemp.pdb", $fileIDq."REDUCED.pdb");
+print "\nif no errors here, new mutations were created and reduced\n";
+print "\n check your mutant protein PDB file = $fileIDq.REDUCED.pdb \n";
+system("$chimera_path"."chimera $fileIDq"."REDUCED.pdb\n");
 
 # rerun ctl files again after specifying mutant as new query
-$fileIDq = "$fileIDr"."mut";
 control;
 print "\nall control files are updated\n\n";
+
 }
+
+
 #####################################################################################################
 
 sub mutlist{
@@ -476,6 +492,9 @@ else {print "teLeap procedure appears to have run (double check .prmtop and .inp
 
 ######################################################################################################
 sub reduce { # create topology and coordinate files 
+# copy + rename ref PDB before mutating 
+copy($fileIDr.".pdb", $fileIDr."mut.pdb");
+$fileIDq = $fileIDr."mut"; # redefine label
 system "pdb4amber -i $fileIDq.pdb -o ".$fileIDq."REDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 }

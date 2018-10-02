@@ -127,7 +127,7 @@ my $pdbFrame = $mw->Frame();
 					-textvariable=>\$runsID
 					);
     my $chainFrame = $pdbFrame->Frame();
-		my $chainLabel = $chainFrame->Label(-text=>"number of chains in structure (e.g. 3 = A/B/C): ");
+		my $chainLabel = $chainFrame->Label(-text=>"number of protein chains (e.g. 3 = A/B/C): ");
 		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$chainN
@@ -496,8 +496,7 @@ print "chains in structure are...\n";
 print @chainlist;
 print "\n\n";
 
-print "NOTE: if chains reported by reduced PDB file have more than 1000 amino acids,\n";
-print "OR if the chain designations look as if they have been calculated incorrectly\n";
+print "NOTE: if the chain designations look as if they have been calculated incorrectly\n";
 print "you will need to edit...re-enter lengths manually in MDq.ctl, MDr.ctl, DROIDS.ctl\n\n";
 ##############################################
 }  # end sub
@@ -512,24 +511,34 @@ open (LST, "<"."mutate_list.txt") || die "could not find mutate_list.txt\n";
 @LST = <LST>;
 open(MUT, ">"."mutate_protein.cmd");
 print MUT "open $fileIDr"."REDUCED.pdb\n";
-    for (my $l = 0; $l < scalar @LST-1; $l++){
+    for (my $l = 0; $l < scalar @LST; $l++){
         if ($l == 0){next;}
         $LSTrow = $LST[$l];
         @LSTrow = split(/\s+/, $LSTrow);
         $subsTYPE = $LSTrow[0];
         $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";}
         }
 print MUT "write 0 $fileIDr"."mutREDUCED.pdb\n";
 close MUT;
 
 # run mutate_protein.cmd script
+sleep (1);
 system("$chimera_path"."chimera --nogui mutate_protein.cmd > mutate_protein.log\n");
-print "\nmutant protein PDB file was created\n";
+print "\nmutant protein PDB file was created = $fileIDq.REDUCED.pdb \n";
 
-# rerun ctl files again after specifying mutant as new query
+# specifying mutant as new query
 $fileIDq = "$fileIDr"."mut";
 
+# reducing new mutations and check
+sleep (1);
+print "\nreducing new mutations that were added\n";
+sleep (1);
+system "pdb4amber -i". $fileIDq."REDUCED.pdb -o ".$fileIDq."REDUCEDtemp.pdb --reduce \n";
+copy($fileIDq."REDUCEDtemp.pdb", $fileIDq."REDUCED.pdb");
+print "\nif no errors here, new mutations were created and reduced\n";
+print "\n check your mutant protein PDB file = $fileIDq.REDUCED.pdb \n";
+system("$chimera_path"."chimera $fileIDq"."REDUCED.pdb\n");
 }
 #####################################################################################################
 
@@ -547,7 +556,7 @@ print "TYR\t"."31\n";
 print "PRO\t"."35\n";
 print "LEU\t"."47\n";
 print "ARG\t"."52\n";
-
+print "\nNOTE: use positions in file = "."$fileIDq"."REDUCED.pdb\n\n";
 system "gedit mutate_list.txt\n";
 
 # run mutate_protein.cmd script

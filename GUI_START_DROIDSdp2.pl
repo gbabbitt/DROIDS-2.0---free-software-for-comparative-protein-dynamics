@@ -225,10 +225,10 @@ $teLeapButton->pack(-side=>"bottom",
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
     		     );
-$reduceButton->pack(-side=>"bottom",
+$mutButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$mutButton->pack(-side=>"bottom",
+$reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $cislistButton->pack(-side=>"bottom",
@@ -438,8 +438,13 @@ print("DROIDS ctl file is made\n");
 }
 
 #####################################################################################################
-
 sub mutate{
+ print "IMPORTANT:DNA chains will usually offset the AA positions in your bound protein\n";
+print "ENTER THE OFFSET VALUE HERE TO PUT MUTATIONS IN SAME PLACE IN BOUND AND UNBOUND FILES\n\n";
+ print "e.g. if DNA chains occupy first 29 positions in PDB, then enter 29\n\n";
+my $offset = <STDIN>;
+chop($offset);
+
 # create mutate_protein.cmd script
 open (LST, "<"."mutate_list_trans.txt") || die "could not find mutate_list_trans.txt\n";
 @LST = <LST>;
@@ -447,31 +452,42 @@ open (LST2, "<"."mutate_list_cis.txt") || die "could not find mutate_list_cis.tx
 @LST2 = <LST2>;
 #mutate unbound protein
 open(MUT, ">"."mutate_protein_unbound.cmd");
-print MUT "open $fileIDq".".pdb\n";
+print MUT "open $fileIDq"."REDUCED.pdb\n";
     for (my $l = 0; $l < scalar @LST; $l++){
         if ($l == 0){next;}
         $LSTrow = $LST[$l];
         @LSTrow = split(/\s+/, $LSTrow);
         $subsTYPE = $LSTrow[0];
         $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";}
         }
-print MUT "write 0 $fileIDq"."mut.pdb\n";
+print MUT "write 0 $fileIDq"."REDUCED.pdb\n";
 close MUT;
 # run mutate_protein.cmd script
+sleep (1);
 system("$chimera_path"."chimera --nogui mutate_protein_unbound.cmd > mutate_protein_unbound.log\n");
 print "\nmutant protein PDB file was created for unbound protein\n";
 
+# reducing new mutations and check
+sleep (1);
+print "\nreducing new mutations that were added\n";
+sleep (1);
+system "pdb4amber -i". $fileIDq."REDUCED.pdb -o ".$fileIDq."REDUCEDtemp.pdb --reduce \n";
+copy($fileIDq."REDUCEDtemp.pdb", $fileIDq."REDUCED.pdb");
+print "\nif no errors here, new mutations were created and reduced\n";
+print "\n check your mutant protein PDB file = $fileIDq.REDUCED.pdb \n";
+system("$chimera_path"."chimera $fileIDq"."REDUCED.pdb\n");
+
 #mutate bound protein
 open(MUT, ">"."mutate_protein_bound.cmd");
-print MUT "open $fileIDr".".pdb\n";
+print MUT "open $fileIDr"."REDUCED.pdb\n";
     for (my $l = 0; $l < scalar @LST; $l++){ #trans reg mutations
         if ($l == 0){next;}
         $LSTrow = $LST[$l];
         @LSTrow = split(/\s+/, $LSTrow);
         $subsTYPE = $LSTrow[0];
-        $subsPOS = $LSTrow[1];
-        print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";
+        $subsPOS = $LSTrow[1] + $offset;
+        if ($subsTYPE ne '') {print MUT "swapaa $subsTYPE"." #0:$subsPOS\n";}
         }
     for (my $l = 0; $l < scalar @LST2; $l++){ # cis reg mutations
         if ($l == 0){next;}
@@ -479,20 +495,29 @@ print MUT "open $fileIDr".".pdb\n";
         @LST2row = split(/\s+/, $LST2row);
         $subsTYPEna = $LST2row[0];
         $subsPOSna = $LST2row[1];
-        print MUT "swapna $subsTYPEna"." :$subsPOSna\n";
+        if ($subsTYPEna ne '') {print MUT "swapna $subsTYPEna"." :$subsPOSna\n";}
         }
-print MUT "write 0 $fileIDr"."mut.pdb\n";
+print MUT "write 0 $fileIDr"."REDUCED.pdb\n";
 close MUT;
+
 # run mutate_protein.cmd script
+sleep (1);
 system("$chimera_path"."chimera --nogui mutate_protein_bound.cmd > mutate_protein_bound.log\n");
 print "\nmutant protein PDB file was created for bound protein\n";
 
-# rerun ctl files again after specifying mutant as new query
-$fileIDr = "$fileIDr"."mut";
-$fileIDq = "$fileIDq"."mut";
-control;
-print "\nall control files are updated\n\n";
+# reducing new mutations and check
+sleep (1);
+print "\nreducing new mutations that were added\n";
+sleep (1);
+system "pdb4amber -i". $fileIDr."REDUCED.pdb -o ".$fileIDr."REDUCEDtemp.pdb --reduce \n";
+copy($fileIDr."REDUCEDtemp.pdb", $fileIDr."REDUCED.pdb");
+print "\nif no errors here, new mutations were created and reduced\n";
+print "\n check your mutant protein PDB file = $fileIDr.REDUCED.pdb \n";
+system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb\n");
+
 }
+
+
 #####################################################################################################
 
 sub translist{
@@ -562,6 +587,11 @@ else {print "teLeap procedure appears to have run (double check .prmtop and .inp
 
 ######################################################################################################
 sub reduce { # create topology and coordinate files 
+# copy + rename ref PDB before mutating 
+copy($fileIDr.".pdb", $fileIDr."mut.pdb");
+copy($fileIDq.".pdb", $fileIDq."mut.pdb");
+$fileIDr = $fileIDr."mut"; # redefine label
+$fileIDq = $fileIDq."mut"; # redefine label
 system "pdb4amber -i $fileIDq.pdb -o ".$fileIDq."REDUCED.pdb --dry --reduce \n";
 system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 }

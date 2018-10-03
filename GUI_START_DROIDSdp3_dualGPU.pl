@@ -139,7 +139,7 @@ my $pdbFrame = $mw->Frame();
 					-textvariable=>\$runsID
 					);
      my $chainFrame = $pdbFrame->Frame();
-		my $chainLabel = $chainFrame->Label(-text=>"number protein chains (e.g. 3 = A/B/C): ");
+		my $chainLabel = $chainFrame->Label(-text=>"number of protein chains (e.g. 3 = A/B/C): ");
 		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$chainN

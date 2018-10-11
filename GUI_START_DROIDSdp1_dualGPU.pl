@@ -674,11 +674,18 @@ my @IN = <IN>;
 for (my $i = 0; $i < scalar @IN; $i++){
 	 my $INrow = $IN[$i];
 	 my @INrow = split (/\s+/, $INrow);
-	 my $atomnumber = @INrow[1];
-	 my $atomlabel = @INrow[2];
-	 my $resnumber = @INrow[3];
-	 my $resindex = $resnumber + ($startN - 1);
-	 my $reslabel = @INrow[4];
+	 $atomnumber = @INrow[1];
+	 $atomlabel = @INrow[2];
+	 $resnumber = @INrow[3];
+	 $resindex = $resnumber + ($startN - 1);
+	 $reslabel = @INrow[4];
+      if ($atomnumber eq "CA"|| $atomnumber eq "C" || $atomnumber eq "O" || $atomnumber eq "N"){ #finds correct whitespace frame when atomnumber > 10000
+          $atomnumber = @INrow[0];
+	     $atomlabel = @INrow[1];
+	     $resnumber = @INrow[2];
+	     $resindex = $resnumber + ($startN - 1);
+	     $reslabel = @INrow[3];
+          }
 	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resindex\t $reslabel\n"}
    }
 close IN;
@@ -692,11 +699,18 @@ my @IN = <IN>;
 for (my $i = 0; $i < scalar @IN; $i++){
 	 my $INrow = $IN[$i];
 	 my @INrow = split (/\s+/, $INrow);
-	 my $atomnumber = @INrow[1];
-	 my $atomlabel = @INrow[2];
-	 my $resnumber = @INrow[3];
-	 my $resindex = $resnumber + ($startN - 1);
-	 my $reslabel = @INrow[4];
+	 $atomnumber = @INrow[1];
+	 $atomlabel = @INrow[2];
+	 $resnumber = @INrow[3];
+	 $resindex = $resnumber + ($startN - 1);
+	 $reslabel = @INrow[4];
+      if ($atomnumber eq "CA"|| $atomnumber eq "C" || $atomnumber eq "O" || $atomnumber eq "N"){ #finds correct whitespace frame when atomnumber > 10000
+          $atomnumber = @INrow[0];
+	     $atomlabel = @INrow[1];
+	     $resnumber = @INrow[2];
+	     $resindex = $resnumber + ($startN - 1);
+	     $reslabel = @INrow[3];
+          }
 	 if ($atomlabel eq "CA"|| $atomlabel eq "C" || $atomlabel eq "O" || $atomlabel eq "N"){print OUT "$atomnumber\t $atomlabel\t $resindex\t $reslabel\n"}
    }
 close IN;

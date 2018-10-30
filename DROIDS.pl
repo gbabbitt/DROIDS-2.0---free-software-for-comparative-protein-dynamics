@@ -130,7 +130,7 @@ my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARIS
                         -value=>"dp3",
 						-variable=>\$testType
 						);
-    my $lp1Radio = $pipeFrame->Radiobutton( -text => "(7)  analyze impact of a protein interaction with drug, toxin, or activator      					(requires 3 PDB ID's = protein-ligand complex, protein-only, and ligand only)",
+    my $lp1Radio = $pipeFrame->Radiobutton( -text => "(7)  analyze impact of a protein-ligand interaction upon binding drug, toxin, or activator  				(requires 3 PDB ID's = protein-ligand complex, protein-only, and ligand only)",
 						-foreground => 'navy',
                         -value=>"lp1",
 						-variable=>\$testType

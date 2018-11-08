@@ -83,7 +83,7 @@ if colorType == "bw":
  min_color = "blue"
  max_color = "white"
 if colorType == "rw":
- min_color = "red"
+ min_color = "green"
  max_color = "white"
 if colorType == "wg":
  min_color = "white"

@@ -146,7 +146,7 @@ my $seqFrame = $mw->Frame(	-label => "PROTEIN COLOR SCHEME",
                               -value=>"c1",
 						-variable=>\$colorScheme
                               );
-	my $col2Radio = $seqFrame->Radiobutton(-text=>"'temperature' color scheme = blue/red for dFLUX, red/white for p-value, tan for mutation",
+	my $col2Radio = $seqFrame->Radiobutton(-text=>"'temperature' color scheme = blue/red for dFLUX, green/white for p-value, tan for mutation",
 						-foreground => 'maroon4',
                               -value=>"c2",
 						-variable=>\$colorScheme

@@ -152,7 +152,8 @@ my $pdbFrame = $mw->Frame();
 					-relief => "groove",
 					-textvariable=>\$startN
 					);
-          	
+     $startN = 1; # this is now hard coded - Nov 2018
+     
 # Buttons
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
@@ -261,8 +262,8 @@ $runsLabel->pack(-side=>"left");
 $runsEntry->pack(-side=>"left");
 $lengthLabel->pack(-side=>"left");
 $lengthEntry->pack(-side=>"left");
-$startLabel->pack(-side=>"left");
-$startEntry->pack(-side=>"left");
+#$startLabel->pack(-side=>"left");
+#$startEntry->pack(-side=>"left");
 
 $forceFrame->pack(-side=>"top",
 		-anchor=>"e");
@@ -278,8 +279,8 @@ $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
 $lengthFrame->pack(-side=>"top",
 		-anchor=>"e");
-$startFrame->pack(-side=>"top",
-		-anchor=>"e");
+#$startFrame->pack(-side=>"top",
+#		-anchor=>"e");
 $pdbFrame->pack(-side=>"top",
 		-anchor=>"n");
 

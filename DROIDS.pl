@@ -110,7 +110,7 @@ my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARIS
                         -value=>"sdm",
 						-variable=>\$testType
 						);
-	 my $edRadio = $pipeFrame->Radiobutton( -text => "(3) analyze impact of evolutionary divergence on a protein or protein complex	  			            		        (requires 2 PDB ID's representing an ortholog or paralog pair)",
+	 my $edRadio = $pipeFrame->Radiobutton( -text => "(3) analyze impact of functional / evolutionary divergence on a protein or protein complex	  			        (requires 2 PDB ID's representing an paralog or ortholog pair)",
 						-foreground => 'navy',
                         -value=>"ed",
 						-variable=>\$testType

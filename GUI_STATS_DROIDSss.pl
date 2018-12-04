@@ -71,7 +71,7 @@ for (my $i = 0; $i < scalar @IN; $i++){
 	 if ($header eq "query"){$queryID = $value;}
       if ($header eq "reference"){$refID = $value;}
       if ($header eq "length"){$lengthID = $value;}
-      if ($header eq "start"){$startN = $value;}
+      #if ($header eq "start"){$startN = $value;}
       if ($header eq "homology"){$homology = $value;}
       if ($header eq "num_chains"){$chainN = $value;}
 }
@@ -230,6 +230,12 @@ print("CTL file made\n");
 
 sub stats {
 
+print "Enter position of N terminal amino acid (default = 0)\n";
+my $startN = <STDIN>;
+chop($startN);
+if ($startN eq ''){$startN = 0;}
+
+
 if ($chain eq "all"){# stats subroutine for analyzing a single chain protein or all chains of muliti-chain protein
 print " analyzing ONLY single chain protein or ALL chains as one\n\n";
 sleep(2);
@@ -279,7 +285,7 @@ print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
    
-   $filenumber = $startN + $r;
+   $filenumber = $r;
    
    # collect AA info
     open(INFO, "<"."atomflux/DROIDSfluctuation_$filenumber.txt") or next;
@@ -487,11 +493,11 @@ print Rinput "data3\n";
 
 # barplot
 if ($seq_struct_flux eq "flux"){
-print Rinput "d1A = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_ref_avg)\n";
-print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_query_avg)\n";
-print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux_kl)\n";
-print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
-print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
+print Rinput "d1A = data.frame(pos1=$pos_ref+$startN, label1r=$res_ref, label1q=$res_query, Y1val=$flux_ref_avg)\n";
+print Rinput "d1B = data.frame(pos1=$pos_ref+$startN, label1r=$res_ref, label1q=$res_query, Y1val=$flux_query_avg)\n";
+print Rinput "d2 = data.frame(pos2=$pos_ref+$startN, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux_kl)\n";
+print Rinput "d3 = data.frame(pos3=$pos_ref+$startN, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
+print Rinput "d4 = data.frame(pos4=$posAA+$startN, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
 print Rinput "mytable <- cbind(OVERALL=c('% AA match', 'avg Grantham distance', 'avg |dFLUX|'), STATISTICS=$value)\n";
 print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number)', y = 'avg FLUX') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = '$refID')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = '$queryID')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
 print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'position (residue number)', y = 'dFLUX (signed KL distance)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
@@ -598,7 +604,7 @@ print STAT2 "posAA\t"."refAA\t"."queryAA\t"."Dval\t"."pval\t"."signif\n";
 
 for (my $r = 0; $r <= $AA_count; $r++){
    
-   $filenumber = $startN + $r;
+   $filenumber = $r;
    
    # collect AA info
     open(INFO, "<"."atomflux/DROIDSfluctuation_$filenumber.txt") or next;
@@ -825,11 +831,11 @@ print Rinput "data2chain\n";
 
 # barplot
 if ($seq_struct_flux eq "flux"){
-print Rinput "d1A = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_ref_avg)\n";
-print Rinput "d1B = data.frame(pos1=$pos_ref, label1r=$res_ref, label1q=$res_query, Y1val=$flux_query_avg)\n";
-print Rinput "d2 = data.frame(pos2=$pos_ref, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux_kl)\n";
-print Rinput "d3 = data.frame(pos3=$pos_ref, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
-print Rinput "d4 = data.frame(pos4=$posAA, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
+print Rinput "d1A = data.frame(pos1=$pos_ref+$startN, label1r=$res_ref, label1q=$res_query, Y1val=$flux_ref_avg)\n";
+print Rinput "d1B = data.frame(pos1=$pos_ref+$startN, label1r=$res_ref, label1q=$res_query, Y1val=$flux_query_avg)\n";
+print Rinput "d2 = data.frame(pos2=$pos_ref+$startN, label2r=$res_ref, label2q=$res_query, Y2val=$delta_flux_kl)\n";
+print Rinput "d3 = data.frame(pos3=$pos_ref+$startN, label3r=$res_ref, label3q=$res_query, Y3val=$abs_delta_flux)\n";
+print Rinput "d4 = data.frame(pos4=$posAA+$startN, label4r=$refAA, label4q=$queryAA, Y4val = $Dval, Y4sig = $pval, Y4label = $signif)\n";;
 #print Rinput "mytable <- cbind(OVERALL=c('% AA match', 'avg Grantham distance', 'avg |dFLUX|'), STATISTICS=$value)\n";
 print Rinput "myplot1 <- ggplot() + labs(x = 'position (residue number)', y = 'avg FLUX') + geom_line(data = d1A, mapping = aes(x = pos1, y = Y1val, color = '$refID')) + geom_line(data = d1B, mapping = aes(x = pos1, y = Y1val, color = '$queryID')) + theme(axis.title.y = element_text(size=9), axis.title.x=element_blank(), legend.title=element_blank(), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";
 print Rinput "myplot2 <- ggplot(data = d2, mapping = aes(x = pos2, y = Y2val, fill=label2r)) + labs(x = 'chain $chain position (residue number)', y = 'dFLUX (signed KL distance)') + geom_bar(stat='identity')+ theme(axis.title.y = element_text(size=9), legend.title = element_blank(), legend.key.size = unit(2.2, 'mm'),legend.text = element_text(size = 5), panel.background = element_rect(fill = 'grey30'), panel.grid.major = element_line(colour = 'grey50'), panel.grid.minor = element_line(colour = 'grey50'))\n";

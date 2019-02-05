@@ -7,7 +7,7 @@ use File::Copy;
 use List::Util qw( min );
 use List::Util qw( max );
 use List::Util qw(min max);
-use Descriptive();
+use Statistics::Descriptive();
 
 
 # specify the path to working directory for Chimera here
@@ -157,7 +157,6 @@ my $statsButton = $mw -> Button(-text => "make statistical comparisons and plots
                 -background => 'gray45',
                 -foreground => 'white'
 				); # Creates a stats test button
-
 
 my $nextButton = $mw -> Button(-text => "goto DROIDS image and movie rendering", 
 				-command => \&next,

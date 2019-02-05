@@ -3,7 +3,7 @@ use Tk;
 #use strict;
 #use warnings;
 use feature ":5.10";
-use Descriptive();
+use Statistics::Descriptive();
 use File::Copy;
 
 # specify the path to working directory for Chimera here

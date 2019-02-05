@@ -7,7 +7,7 @@ use File::Copy;
 use List::Util qw( min );
 use List::Util qw( max );
 use List::Util qw(min max);
-use Descriptive();
+use Statistics::Descriptive();
 
 
 # specify the path to working directory for Chimera here
@@ -61,7 +61,7 @@ my $frameCount = '';
 
 
 # read control files
-open(IN, "<"."DROIDS.ctl") or die "could not find DROIDS.txt file\n";
+open(IN, "<"."DROIDS.ctl") or die "could not find DROIDS.ctl file\n";
 my @IN = <IN>;
 for (my $i = 0; $i < scalar @IN; $i++){
 	 my $INrow = $IN[$i];
@@ -78,6 +78,19 @@ for (my $i = 0; $i < scalar @IN; $i++){
       if ($header eq "num_chains"){$chainN = $value;}
 }
 close IN;
+
+open(IN2, "<"."MDr.ctl") or die "could not find MDr.ctl file\n";
+my @IN2 = <IN2>;
+for (my $i = 0; $i < scalar @IN2; $i++){
+	 my $INrow = $IN2[$i];
+	 my @INrow = split (/\s+/, $INrow);
+	 my $header = @INrow[0];
+	 my $value = @INrow[1];
+	 if ($header eq "Number_Runs"){$number_runs = $value;}
+      if ($header eq "Solvation_Method"){$solvation_method = $value;}
+      
+}
+close IN2;
 
 
 
@@ -218,7 +231,11 @@ my $stopButton = $mw -> Button(-text => "exit DROIDS",
                 -background => 'gray45',
                 -foreground => 'white'
 				); # Creates a exit button
-
+my $seriesButton = $mw -> Button(-text => "create machine learning classifier on dynamics", 
+				-command => \&series,
+                -background => 'gray45',
+                -foreground => 'white'
+				); # Creates a time series button
 my $attrButton = $mw -> Button(-text => "make attribute file for Chimera", 
 				-command => \&attribute_file,
                 -background => 'gray45',
@@ -232,6 +249,9 @@ my $ctlButton = $mw -> Button(-text => "edit image control file (DROIDS.ctl)",
 
 #### Organize GUI Layout ####
 $stopButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$seriesButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $playXYZbutton->pack(-side=>"bottom",
@@ -478,3 +498,64 @@ my $movieStr = join(" ", @movies);
 system("python DROIDS_gstreamer.py @movies");
 }
 #############################################################################################################
+sub series {
+
+# choose topology file     
+if($solvation_method eq "implicit"){$TOPfile = "vac_1ubqREDUCED.prmtop";}
+if($solvation_method eq "explicit"){$TOPfile = "wat_1ubqREDUCED.prmtop";}
+# loop through .nc files on refID
+for(my $j = 0; $j<$number_runs; $j++){
+$TRAJfile = "prod_$refID"."REDUCED_$j.nc";
+$OUTfile = "fluxtime_$refID"."_$j.txt";
+$step = 5;
+$steplimit = $frameCount;
+$start = 0;
+$stop = 5;
+open (CPPTRAJ, "|"."cpptraj -p $TOPfile\n");
+print CPPTRAJ "trajin $TRAJfile\n";
+print CPPTRAJ "rms first\n";
+print CPPTRAJ "average crdset MyAvg\n";
+print CPPTRAJ "run\n";
+print CPPTRAJ "rms ref MyAvg\n";
+print CPPTRAJ "rms first average\n";
+print CPPTRAJ "atomicfluct out $OUTfile \@CA,C,N,O,H&!(:WAT) start $start stop $steplimit\n";
+print CPPTRAJ "run\n";
+for(my $i = 0; $i<$steplimit/$step; $i++){
+print CPPTRAJ "atomicfluct out $OUTfile \@CA,C,N,O,H&!(:WAT) start $start stop $stop\n";
+print CPPTRAJ "run\n";
+$start = $start + $step;
+$stop = $stop + $step;
+}
+print CPPTRAJ "quit\n";
+close CPPTRAJ;
+}
+# loop through .nc files on queryID
+for(my $j = 0; $j<$number_runs; $j++){
+$TRAJfile = "prod_$queryID"."REDUCED_$j.nc";
+$OUTfile = "fluxtime_$queryID"."_$j.txt";
+$step = 5;
+$steplimit = $frameCount;
+$start = 0;
+$stop = 5;
+open (CPPTRAJ, "|"."cpptraj -p $TOPfile\n");
+print CPPTRAJ "trajin $TRAJfile\n";
+print CPPTRAJ "rms first\n";
+print CPPTRAJ "average crdset MyAvg\n";
+print CPPTRAJ "run\n";
+print CPPTRAJ "rms ref MyAvg\n";
+print CPPTRAJ "rms first average\n";
+print CPPTRAJ "atomicfluct out $OUTfile \@CA,C,N,O,H&!(:WAT) start $start stop $steplimit\n";
+print CPPTRAJ "run\n";
+for(my $i = 0; $i<$steplimit/$step; $i++){
+print CPPTRAJ "atomicfluct out $OUTfile \@CA,C,N,O,H&!(:WAT) start $start stop $stop\n";
+print CPPTRAJ "run\n";
+$start = $start + $step;
+$stop = $stop + $step;
+}
+print CPPTRAJ "quit\n";
+close CPPTRAJ;
+}
+sleep(1); print("time series files created\n\n"); sleep(1);    
+     
+}
+###########################################################################################################

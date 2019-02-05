@@ -3,7 +3,7 @@ use Tk;
 #use strict;
 #use warnings;
 use feature ":5.10";
-use Descriptive();
+use Statistics::Descriptive();
 use File::Copy;
 
 # specify the path to working directory for Chimera here
@@ -18,7 +18,6 @@ for (my $i = 0; $i < scalar @IN; $i++){
 }
 close IN;
 print "path to Chimera .exe\t"."$chimera_path\n";
-#my $chimera_path = "/opt/UCSF/Chimera64-1.11/bin/";
 
 #### This creates a GUI to write the control files needed for the GPU accelerated pmemd.cuda pipeline ####
 
@@ -37,6 +36,10 @@ my $cutoffValueSalt=0.0;
 my $cutoffValueHeatFS=0;
 my $cutoffValueEqFS=0;
 my $cutoffValueProdFS=0;
+my @fullfile;
+my @chainlen;
+my @fullfile2;
+my @chainlen2;
 
 #### Create GUI ####
 my $mw = MainWindow -> new; # Creates a new main window
@@ -116,12 +119,7 @@ my $pdbFrame = $mw->Frame();
 					-relief => "groove",
 					-textvariable=>\$fileIDr
 					);
-	my $DfileFrame = $pdbFrame->Frame();
-		my $DfileLabel = $DfileFrame->Label(-text=>"pdb ID for DNA only (e.g. 1ytb_dna) : ");
-		my $DfileEntry = $DfileFrame->Entry(-borderwidth => 2,
-					-relief => "groove",
-					-textvariable=>\$fileIDr
-					);	
+		
 	my $forceFrame = $pdbFrame->Frame();
 		my $forceLabel = $forceFrame->Label(-text=>"protein force field (e.g. leaprc.protein.ff14SB): ");
 		my $forceEntry = $forceFrame->Entry(-borderwidth => 2,
@@ -133,27 +131,27 @@ my $pdbFrame = $mw->Frame();
 		my $dforceEntry = $dforceFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$dforceID
-					); 
+					);    
 	my $runsFrame = $pdbFrame->Frame();
 		my $runsLabel = $runsFrame->Label(-text=>"number of repeated MD sample runs: ");
 		my $runsEntry = $runsFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$runsID
 					);
-     my $lengthFrame = $pdbFrame->Frame();
-		my $lengthLabel = $lengthFrame->Label(-text=>"length of protein (no. of AA's): ");
-		my $lengthEntry = $lengthFrame->Entry(-borderwidth => 2,
+     my $chainFrame = $pdbFrame->Frame();
+		my $chainLabel = $chainFrame->Label(-text=>"number of protein chains (e.g. 3 = A/B/C): ");
+		my $chainEntry = $chainFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
-					-textvariable=>\$lengthID
-					);    
+					-textvariable=>\$chainN
+					);
 	my $startFrame = $pdbFrame->Frame();
 		my $startLabel = $startFrame->Label(-text=>"start numbering AA's on chain at (e.g. 1): ");
 		my $startEntry = $startFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$startN
 					);
-     $startN = 1; # this is now hard coded - Nov 2018
-     
+          $startN = 1; # this is now hard coded - Nov 2018
+          
 # Buttons
 my $controlButton = $mw -> Button(-text => "make MD, cpptraj, and DROIDS control files (.ctl)", 
 				-command => \&control
@@ -183,12 +181,12 @@ my $mutButton = $mw -> Button(-text => "create mutant PDB files",
 my $teLeapButton = $mw -> Button(-text => "generate topology and coordinate files (teLeap)", 
 				-command => \&teLeap
 				); # Creates a teLeap button
-my $alignButton = $mw -> Button(-text => "create sequence and structural alignment (UCSF Chimera)", 
-				-command => \&align
-				); # Creates a align button
 my $reduceButton = $mw -> Button(-text => "dry and reduce structure (run pdb4amber)", 
 				-command => \&reduce
 				); # Creates a pdb4amber button
+my $alignButton = $mw -> Button(-text => "create sequence and structural alignment (UCSF Chimera)", 
+				-command => \&align
+				); # Creates a align button
 my $infoButton = $mw -> Button(-text => "create atom info files", 
 				-command => \&info
 				); # Creates a file button
@@ -204,6 +202,7 @@ my $stopButton = $mw -> Button(-text => "exit DROIDS",
 				-command => \&stop
 				); # Creates a file button
 
+
 #### Organize GUI Layout ####
 $stopButton->pack(-side=>"bottom",
 			-anchor=>"s"
@@ -217,6 +216,9 @@ $fluxButton->pack(-side=>"bottom",
 $infoButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
+$killButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
 $launchButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
@@ -225,11 +227,8 @@ $teLeapButton->pack(-side=>"bottom",
 			);
 $alignButton->pack(-side=>"bottom",
 			-anchor=>"s"
-    		     );
+    		);
 $mutButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
-$reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $cislistButton->pack(-side=>"bottom",
@@ -238,13 +237,13 @@ $cislistButton->pack(-side=>"bottom",
 $translistButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
-$killButton->pack(-side=>"bottom",
+$controlButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$reduceButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $survButton->pack(-side=>"bottom",
-			-anchor=>"s"
-			);
-$controlButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 
@@ -252,16 +251,14 @@ $QfileLabel->pack(-side=>"left");
 $QfileEntry->pack(-side=>"left");
 $RfileLabel->pack(-side=>"left");
 $RfileEntry->pack(-side=>"left");
-$DfileLabel->pack(-side=>"left");
-$DfileEntry->pack(-side=>"left");
 $forceLabel->pack(-side=>"left");
 $forceEntry->pack(-side=>"left");
 $dforceLabel->pack(-side=>"left");
 $dforceEntry->pack(-side=>"left");
 $runsLabel->pack(-side=>"left");
 $runsEntry->pack(-side=>"left");
-$lengthLabel->pack(-side=>"left");
-$lengthEntry->pack(-side=>"left");
+$chainLabel->pack(-side=>"left");
+$chainEntry->pack(-side=>"left");
 #$startLabel->pack(-side=>"left");
 #$startEntry->pack(-side=>"left");
 
@@ -273,11 +270,9 @@ $QfileFrame->pack(-side=>"top",
 		-anchor=>"e");
 $RfileFrame->pack(-side=>"top",
 		-anchor=>"e");
-$DfileFrame->pack(-side=>"top",
-		-anchor=>"e");
 $runsFrame->pack(-side=>"top",
 		-anchor=>"e");
-$lengthFrame->pack(-side=>"top",
+$chainFrame->pack(-side=>"top",
 		-anchor=>"e");
 #$startFrame->pack(-side=>"top",
 #		-anchor=>"e");
@@ -302,8 +297,15 @@ MainLoop; # Allows Window to Pop Up
 ########################################################################################
 sub stop {exit;}
 ########################################################################################
-
 sub control { # Write a control file and then call appropriate scripts that reference control file
+
+print "IMPORTANT: prior to analyses, remove TER lines for all DNA chains \n";
+print "from $fileIDr"."REDUCED.pdb PDB file, then type 'done'\n\n";
+system "gedit $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n";
+my $done = <STDIN>;
+chop($done);
+if ($done ne "done"){exit;}
+
 	if ($solvType eq "im") {$repStr = "implicit";}
 	if ($solvType eq "ex") {$repStr = "explicit";}
 	
@@ -312,24 +314,92 @@ sub control { # Write a control file and then call appropriate scripts that refe
 	$cutoffValueEqFS = $cutoffValueEq*1000000;
 	$cutoffValueProdFS = $cutoffValueProd*1000;
 
-### make qury protein control file ###	
+   
+### make query protein control file ###
+
+### get chain information from PDB
+## read in .pdb file
+open(INPUTFILE, $fileIDq."REDUCED.pdb");
+    # load input into array
+    #print"success";
+    chomp(@fullfile = <INPUTFILE>);
+    close(INPUTFILE);
+
+my $count = 0;
+for(my $line = 0; $line < scalar @fullfile; $line++){
+    ## go down first column until you hit TER
+    chomp($fullfile[$line]);
+    my @entry = (split (/\s+/, $fullfile[$line]));
+    if ($entry[0] eq "TER") {
+        # get each chain length
+        my $len = $entry[4];
+        if ($len eq ''){$len = $entry[3]; $len =~ s/\D//g;}  #fixes concatenation of chain ID and residue number when > 1000
+        $chainlen[$count] = $len;
+        #print "$chainlen[$count]\n";
+        $count++;
+    }
+}
+### write control file
 open(my $ctlFile1, '>', "MDq.ctl") or die "Could not open output file";
 print $ctlFile1 
 "PDB_ID\t".$fileIDq."REDUCED\t# Protein Data Bank ID for MD run
-Force_Field\t$forceID\t# AMBER force field to use in MD runs
+Number_Chains\t$chainN\t# Number of chains on structure\n";
+for(my $ent = 0; $ent < scalar @chainlen; $ent++){
+    my $chain = chr($ent + 65);
+    print $ctlFile1 "length$chain\t$chainlen[$ent]\t #end of chain designated\n";
+    print "MDq.ctl\n";
+    print "length$chain\t$chainlen[$ent]\t #end of chain designated\n";
+}
+print $ctlFile1
+"Force_Field\t$forceID\t# AMBER force field to use in MD runs
 DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
 Equilibration_Time\t$cutoffValueEqFS\t# length of equilibration run (fs)
 Production_Time\t$cutoffValueProdFS\t# length of production run (fs)
 Solvation_Method\t$repStr\t# method of solvation (implicit or explicit)
-Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)";
+Salt_Conc\t$cutoffValueSalt\t# salt concentration (implicit only, PME=O)
+Temperature_Query\t$tempQ\t# temperature of query run (300K is same as ref run)";
 close $ctlFile1;
-### make qury protein control file ###	
+
+### make ref protein control file ###
+## extract information from PDB
+open(INPUTFILE2, $fileIDr."REDUCED.pdb");
+    # load input into array
+    chomp(@fullfile2 = <INPUTFILE2>);
+    close(INPUTFILE2);
+
+my $count = 0;
+for(my $line = 0; $line < scalar @fullfile2; $line++){
+    ## go down first column until you hit TER
+    chomp($fullfile2[$line]);
+    my @entry = (split (/\s+/, $fullfile2[$line]));
+    if ($entry[0] eq "TER") {
+        # get each chain length
+        my $len = $entry[4];
+        if ($len eq ''){$len = $entry[3]; $len =~ s/\D//g;} #fixes concatenation of chain ID and residue number when > 1000
+        $chainlen2[$count] = $len;
+        #print "$count\t$chainlen2[$count]\n";
+        $count++;
+    }
+}
+## write to control file
 open(my $ctlFile2, '>', "MDr.ctl") or die "Could not open output file";
 print $ctlFile2 
 "PDB_ID\t".$fileIDr."REDUCED\t# Protein Data Bank ID for MD run
-Force_Field\t$forceID\t# AMBER force field to use in MD runs
+Number_Chains\t$chainN\t# Number of chains on structure\n";
+for(my $cnt = 0; $cnt < scalar @chainlen2; $cnt++){
+    my $chain = chr($cnt + 65);
+    #print "$cnt";
+    #print "$chainlen2[$cnt]\n";
+    #print "length$chain\t$chainlen2[$cnt]\n";
+    print $ctlFile2 "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    print "MDr.ctl\n";
+    print "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    
+}
+print $ctlFile2
+"Force_Field\t$forceID\t# AMBER force field to use in MD runs
 DNA_Field\t$dforceID\t# AMBER force field to use in MD runs
 Number_Runs\t$runsID\t# number of repeated samples of MD runs
 Heating_Time\t$cutoffValueHeatFS\t# length of heating run (fs)
@@ -416,7 +486,7 @@ print "\n\ncpptraj control files is made\n\n";
 ##########################################
 # make control file for DROIDS	
 sleep(0.5);
-print("Making ctl file...\n");
+print("Making DROIDS.ctl file...\n");
 	if ($ribbon == 1 && $surface == 0) {$repStr = "ribbon";}  # opaque ribbon rep only
 	if ($surface == 1 && $ribbon == 0) {$repStr =  "surface";} # opaque surface rep only
 	if ($surface == 1 && $ribbon == 1) {$repStr =  "ribbonsurface";} # opaque ribbon with transparent surface
@@ -424,9 +494,22 @@ print("Making ctl file...\n");
 	$testStr = "flux"; $testStrLong = "fluctuation";  # file and folder labels
 	
 open(CTL, '>', "DROIDS.ctl") or die "Could not open output file";
-print CTL "query\t"."$queryID\t # Protein Data Bank ID for query structure\n";
-print CTL "reference\t"."$refID\t # Protein Data Bank ID for reference structure (or neutral model)\n";
-print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+print CTL "query\t"."$fileIDq\t # Protein Data Bank ID for query structure\n";
+print CTL "reference\t"."$fileIDr\t # Protein Data Bank ID for reference structure (or neutral model)\n";
+#print CTL "length\t"."$lengthID\t # number of amino acids on chain\n";
+print CTL "num_chains\t"."$chainN\t # number of chains in structure\n";
+$chainTTL = 0;
+for(my $cnt = 0; $cnt < scalar @chainlen2; $cnt++){
+    my $chain = chr($cnt + 65);
+    #print "$cnt";
+    #print "$chainlen2[$cnt]\n";
+    #print "length$chain\t$chainlen2[$cnt]\n";
+    print CTL "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    print "DROIDS.ctl\n";
+    print "length$chain\t$chainlen2[$cnt]\t #end of chain designated\n";
+    $chainTTL = $chainlen2[$cnt];
+}
+print CTL "length\t"."$chainTTL\t # total length of chain\n";
 print CTL "start\t"."$startN\t # number of AA at start of chain\n";
 #print CTL "cutoff_value\t"."$cutoffValue\t # p-value under which the KS comparison will be considered significant\n";
 #print CTL "representations\t"."$repStr\t # methods of molecular representation in Chimera (ribbon and/or surface)\n";
@@ -435,10 +518,26 @@ print CTL "start\t"."$startN\t # number of AA at start of chain\n";
 close CTL;
 print("DROIDS ctl file is made\n");
 ##############################################
+#  create list of chain labels
+##############################################
+@alphabet = ("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+@chainlist = ();
+if($chainN > 26) {print "warning - number of chains exceeds alphabet\n";}
+for(my $l = 0; $l < $chainN; $l++){
+     $letter = $alphabet[$l];
+     push(@chainlist, $letter);
+     }
+print "chains in structure are...\n";
+print @chainlist;
+print "\n\n";
 
-}
+print "NOTE: if the chain designations look as if they have been calculated incorrectly\n";
+print "you will need to edit...re-enter lengths manually in MDq.ctl, MDr.ctl, DROIDS.ctl\n\n";
+##############################################
+}  # end sub
 
 #####################################################################################################
+
 sub mutate{
  print "IMPORTANT:DNA chains will usually offset the AA positions in your bound protein\n";
 print "ENTER THE OFFSET VALUE HERE TO PUT MUTATIONS IN SAME PLACE IN BOUND AND UNBOUND FILES\n\n";
@@ -523,8 +622,6 @@ print "\n check your mutant protein PDB file = $fileIDr.REDUCED.pdb \n";
 system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb\n");
 
 }
-
-
 #####################################################################################################
 
 sub translist{
@@ -607,7 +704,10 @@ system "pdb4amber -i $fileIDr.pdb -o ".$fileIDr."REDUCED.pdb --dry --reduce \n";
 
 sub launch { # launch MD run
 system "perl MD_proteinQuery.pl\n";
+sleep(2);
 system "perl MD_proteinReference.pl\n";
+print "\n\n";
+print "MD SIMULATIONS ARE COMPLETED WHEN TERMINALS CLOSE\n\n";
 }
 
 ######################################################################################################
@@ -626,18 +726,10 @@ system "x-terminal-emulator -e nvidia-smi -l 20\n";
 
 ######################################################################################################
 
-sub skip{ # skip MD if .nc files are already generated
-print "  skipping MD simulation and going straight to vector trajectory analysis\n\n";	
-sleep (1);
-system "perl GUI_STATS_DROIDSdp2.pl\n";
-}
-
-######################################################################################################
-
 sub align{
 
 print "STEP 1 - Here you will need to run MatchMaker in UCSF Chimera\n\n";
-print "STEP 2 - Then run Match-Align in UCSF Chimera\n\n";
+print "STEP 2 - Then run Match-Align in UCSF Chimera for each chain\n\n";
 print "            if satisfied with alignment, save as a clustal file\n";
 print "            (e.g. my_align.aln)\n\n";
 
@@ -650,7 +742,10 @@ print "            opening USCF Chimera and loading PDB ref structure\n\n";
 print "            CREATE YOUR STRUCTURAL/SEQUENCE ALIGNMENT (.aln) NOW \n\n";
 system("$chimera_path"."chimera $fileIDr"."REDUCED.pdb $fileIDq"."REDUCED.pdb\n");
 # properly rename .aln file for DROIDS  
-print "\nPlease enter name of your saved alignment file (e.g my_align.aln)\n";
+$chainlabel = '';
+for (my $cl = 0; $cl < scalar @chainlist; $cl++){
+     $chainlabel = $chainlist[$cl];
+print "\nPlease enter name of your saved chain $chainlabel alignment file (e.g my$chainlabel"."_align.aln)\n";
 my $align_name = "";
 my $align_file = <STDIN>;
 chop($align_file);
@@ -668,12 +763,27 @@ for (my $i = 0; $i < scalar @IN; $i++){
       if ($header eq "CLUSTAL"){$align_name = $ref_header;}
       }
 my @name_segment = split (/REDUCED/, $align_name);
-$split_name = $name_segment[0]."_align.aln";
+if ($chainlabel eq "A"){$pdb_name = $name_segment[0];}
+$split_name = $name_segment[0]."_align".$chainlabel.".aln";
 $oldfilename = $align_file;
 $newfilename = $split_name;
 print "copying $align_file"." to $split_name\n";
 # rename file with header
 copy($oldfilename, $newfilename);
+}
+# create concatenated .aln master file
+open (OUT, ">"."$pdb_name"."_align.aln");
+for (my $ccl = 0; $ccl < scalar @chainlist; $ccl++){
+     $chainlabel = $chainlist[$ccl];
+     open (IN, "<"."$pdb_name"."_align".$chainlabel.".aln");
+     my @IN = <IN>;
+     print OUT @IN;
+     print OUT "\n";
+     #print @IN;
+     #print "\n";
+     close IN;
+     }    
+close OUT;
 ################
 sleep(0.5);
 print "\n\n alignment procedure is complete\n";
@@ -1014,8 +1124,8 @@ print "          (e.g. position 5 -> LEU LEU or position 5 -> LEU ALA)\n";
 print "          (this will NOT allow sites of mutations to be visualized later)\n\n";
 #my $homology = <STDIN>;
 #chop($homology);
-print "for mutations on simple DNA-protein interaction analysis 'homology' will be loose\n";
-$homology = "loose";
+print "for mutations on simple DNA-protein interaction analysis 'homology' will be strict\n";
+$homology = "strict";
 sleep(2);
 
 open(CTL, '>>', "DROIDS.ctl") or die "Could not open output file";
@@ -1053,55 +1163,60 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_query ne "xxx"){  # loose homology = collect all aligned residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					 if ($pos_ref =~ m/\d/ && $j>1){
-                          $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-                          $statSCORE->add_data (@REFfluxAvg);
-					 $flux_ref_avg = $statSCORE->mean();
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-                          $statSCORE->add_data (@QUERYfluxAvg);
-					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 # calculate JS divergence
-                          open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
-                          print TMP1 "flux_ref\t"."flux_query\n";
-                          for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
-                          close TMP1;
-                          open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
-                          close TMP2;
-                          open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-                          print Rinput "library('FNN')\n";
-                          print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
-                          $flux_ref = "data\$flux_ref"; # flux on reference residue
-                          $flux_query = "data\$flux_query"; # flux on query residue
-                          print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
-                          #print Rinput "print(d1)\n";
-                          print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
-                          print Rinput "print(myKL[10])\n";
-                          print Rinput "sink('flux_values_KL.txt')\n";
-                          print Rinput "print(myKL[10])\n";
-                          print Rinput "sink()\n";
-                          # write to output file and quit R
-                          print Rinput "q()\n";# quit R 
-                          print Rinput "n\n";# save workspace image?
-                          close Rinput;
-                          open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
-                          my @TMP3 = <TMP3>;
-                          for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
-                          $TMP3row = $TMP3[$tt];
-                          @TMP3row = split (/\s+/, $TMP3row);
-                          $header = $TMP3row[0];
-                          $value = $TMP3row[1];
-                          #print "$header\t"."$value\n";
-                          if ($header eq "[1]"){$KL = $value;}
-                          }
-                          if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
-                          print "my KL is "."$KL\n";
-                          close TMP3;
-                          print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
-					 my @REFfluxAvg = ();
-                          my @QUERYfluxAvg = ();
-                          }
+					                         
+                          if ($pos_ref =~ m/\d/ && $j>1){
+                              $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+                              $statSCORE->add_data (@REFfluxAvg);
+					     $flux_ref_avg = $statSCORE->mean();
+                              #$flux_ref_n = $statSCORE->count();
+                              #print "flux_ref_n\t"."$flux_ref_n\n";
+					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
+                              $statSCORE->add_data (@QUERYfluxAvg);
+					     $flux_query_avg = $statSCORE->mean();
+                              #$flux_query_n = $statSCORE->count();
+                              #print "flux_query_n\t"."$flux_query_n\n";
+					     $delta_flux = ($flux_ref_avg - $flux_query_avg); # note: ref and query are reversed due to GUI input
+					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+                              # calculate JS divergence
+                              open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
+                              print TMP1 "flux_ref\t"."flux_query\n";
+                              for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
+                              close TMP1;
+                              open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
+                              close TMP2;
+                              open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+                              print Rinput "library('FNN')\n";
+                              print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
+                              $flux_ref = "data\$flux_ref"; # flux on reference residue
+                              $flux_query = "data\$flux_query"; # flux on query residue
+                              print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
+                              #print Rinput "print(d1)\n";
+                              print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
+                              print Rinput "print(myKL[10])\n";
+                              print Rinput "sink('flux_values_KL.txt')\n";
+                              print Rinput "print(myKL[10])\n";
+                              print Rinput "sink()\n";
+                              # write to output file and quit R
+                              print Rinput "q()\n";# quit R 
+                              print Rinput "n\n";# save workspace image?
+                              close Rinput;
+                              open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
+                              my @TMP3 = <TMP3>;
+                              for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
+                              $TMP3row = $TMP3[$tt];
+                              @TMP3row = split (/\s+/, $TMP3row);
+                              $header = $TMP3row[0];
+                              $value = $TMP3row[1];
+                              #print "$header\t"."$value\n";
+                              if ($header eq "[1]"){$KL = $value;}
+                              }
+                              if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
+                              print "my KL is "."$KL\n";
+                              close TMP3;
+                              print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
+					     @REFfluxAvg = ();
+                              @QUERYfluxAvg = ();
+                              }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 					 
@@ -1109,55 +1224,56 @@ for (my $j = 0; $j < scalar @IN; $j++){ # scan atom type
 					 if(($j == 1 || $pos_ref ne $next_pos) && $res_ref eq $res_query && $res_query ne "xxx"){ # strict homology = collect only exact matching residues  
            open (OUT, ">"."./atomflux/DROIDSfluctuation_$next_pos.txt") or die "could not create output file\n";
            print OUT "sample\t"."pos_ref\t"."res_ref\t"."res_query\t"."atomnumber\t"."atomlabel\t"."flux_ref\t"."flux_query\n";
-					 if ($pos_ref =~ m/\d/ && $j>1){
-                          $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
-                          $statSCORE->add_data (@REFfluxAvg);
-					 $flux_ref_avg = $statSCORE->mean();
-					 $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
-                          $statSCORE->add_data (@QUERYfluxAvg);
-					 $flux_query_avg = $statSCORE->mean();
-					 $delta_flux = ($flux_ref_avg - $flux_query_avg);
-					 $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
-					 # calculate JS divergence
-                          open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
-                          print TMP1 "flux_ref\t"."flux_query\n";
-                          for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
-                          close TMP1;
-                          open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
-                          close TMP2;
-                          open (Rinput, "| R --vanilla")||die "could not start R command line\n";
-                          print Rinput "library('FNN')\n";
-                          print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
-                          $flux_ref = "data\$flux_ref"; # flux on reference residue
-                          $flux_query = "data\$flux_query"; # flux on query residue
-                          print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
-                          #print Rinput "print(d1)\n";
-                          print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
-                          print Rinput "print(myKL[10])\n";
-                          print Rinput "sink('flux_values_KL.txt')\n";
-                          print Rinput "print(myKL[10])\n";
-                          print Rinput "sink()\n";
-                          # write to output file and quit R
-                          print Rinput "q()\n";# quit R 
-                          print Rinput "n\n";# save workspace image?
-                          close Rinput;
-                          open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
-                          my @TMP3 = <TMP3>;
-                          for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
-                          $TMP3row = $TMP3[$tt];
-                          @TMP3row = split (/\s+/, $TMP3row);
-                          $header = $TMP3row[0];
-                          $value = $TMP3row[1];
-                          #print "$header\t"."$value\n";
-                          if ($header eq "[1]"){$KL = $value;}
-                          }
-                          if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
-                          print "my KL is "."$KL\n";
-                          close TMP3;
-                          print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
-					 @REFfluxAvg = ();
-                          @QUERYfluxAvg = ();
-                          }
+					         
+                          if ($pos_ref =~ m/\d/ && $j>1){
+                              $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - reference
+                              $statSCORE->add_data (@REFfluxAvg);
+					     $flux_ref_avg = $statSCORE->mean();
+					     $statSCORE = new Statistics::Descriptive::Full; # residue avg flux - query
+                              $statSCORE->add_data (@QUERYfluxAvg);
+					     $flux_query_avg = $statSCORE->mean();
+					     $delta_flux = ($flux_ref_avg - $flux_query_avg); # note: ref and query are reversed due to GUI input
+					     $abs_delta_flux = abs($flux_ref_avg - $flux_query_avg);
+					     # calculate JS divergence
+                              open (TMP1, ">"."flux_values_temp.txt") or die "could not create temp file\n";
+                              print TMP1 "flux_ref\t"."flux_query\n";
+                              for (my $t = 0; $t <= scalar @REFfluxAvg; $t++){print TMP1 "$REFfluxAvg[$t]\t"; print TMP1 "$QUERYfluxAvg[$t]\n";}
+                              close TMP1;
+                              open (TMP2, ">"."flux_values_KL.txt") or die "could not create temp file\n";
+                              close TMP2;
+                              open (Rinput, "| R --vanilla")||die "could not start R command line\n";
+                              print Rinput "library('FNN')\n";
+                              print Rinput "data = read.table('flux_values_temp.txt', header = TRUE)\n"; 
+                              $flux_ref = "data\$flux_ref"; # flux on reference residue
+                              $flux_query = "data\$flux_query"; # flux on query residue
+                              print Rinput "d1 = data.frame(fluxR=$flux_ref, fluxQ=$flux_query)\n";
+                              #print Rinput "print(d1)\n";
+                              print Rinput "myKL<-KL.dist($flux_ref, $flux_query, k=10)\n";
+                              print Rinput "print(myKL[10])\n";
+                              print Rinput "sink('flux_values_KL.txt')\n";
+                              print Rinput "print(myKL[10])\n";
+                              print Rinput "sink()\n";
+                              # write to output file and quit R
+                              print Rinput "q()\n";# quit R 
+                              print Rinput "n\n";# save workspace image?
+                              close Rinput;
+                              open (TMP3, "<"."flux_values_KL.txt") or die "could not create temp file\n";
+                              my @TMP3 = <TMP3>;
+                              for (my $tt = 0; $tt <= scalar @TMP3; $tt++){
+                              $TMP3row = $TMP3[$tt];
+                              @TMP3row = split (/\s+/, $TMP3row);
+                              $header = $TMP3row[0];
+                              $value = $TMP3row[1];
+                              #print "$header\t"."$value\n";
+                              if ($header eq "[1]"){$KL = $value;}
+                              }
+                              if ($delta_flux <= 0){$KL = -$KL;} # make KL value negative if dFLUX is negative
+                              print "my KL is "."$KL\n";
+                              close TMP3;
+                              print OUT2 "$pos_ref\t"."$res_ref\t"."$res_query\t"."$flux_ref_avg\t"."$flux_query_avg\t"."$delta_flux\t"."$abs_delta_flux\t"."$KL\n";
+					     @REFfluxAvg = ();
+                              @QUERYfluxAvg = ();
+                              }
 					 if ($next_pos eq ''){next;}
 					 }}
 					 
@@ -1173,6 +1289,57 @@ sleep(2);
 ##################################################################################################
 print "\n\n done parsing CPPTRAJ data files\n\n";
 sleep(2);
+################################################################################################
+# create chain ID column DROIDSfluctuationAVG.txt and make chain specific output data files
+
+print " reading control file to get chain lengths\n\n";
+@lengthlist = ();
+$chainlabel = '';
+for (my $cl = 0; $cl < scalar @chainlist; $cl++){
+     $chainlabel = $chainlist[$cl];
+
+my $AA_count = '';
+
+open(IN, "<"."DROIDS.ctl") or die "could not find CPPTRAJ input control file\n";
+my @IN = <IN>;
+for (my $c = 0; $c <= scalar @IN; $c++){
+    my $INrow = $IN[$c];
+    my @INrow = split (/\s+/, $INrow);
+    my $header = $INrow[0];
+    my $value = $INrow[1];
+    #print "$header\t"."$value\n";
+    if ($header eq "length$chainlabel") { $AA_count = $value; push (@lengthlist, $AA_count);}
+}
+close IN;
+sleep(1);
+}
+print @chainlist;
+print @lengthlist;
+print "\n\n";
+$pointer = 0;
+$mychain = $chainlist[$pointer];
+$mylength = $lengthlist[$pointer];
+$prevlength = 0;
+open(OUT, ">"."DROIDSfluctuationAVGchain.txt") or die "could open DROIDS DATA file\n";
+open(IN, "<"."DROIDSfluctuationAVG.txt") or die "could not find DROIDS DATA file\n";
+my @IN = <IN>;
+for (my $i = 0; $i < scalar @IN; $i++){
+	 my $INrow = $IN[$i];
+      chomp $INrow;
+      my @INrow = split (/\s+/, $INrow);
+	 if ($i == 0){print OUT "$INrow\t"."chain\n";}
+      my $header = $INrow[0];
+      #print "$header\t"."$mylength\t"."$mychain\n";
+      if ($i > 0 && $header > $mylength){$pointer = $pointer+1; $mychain = $chainlist[$pointer]; $mylength = $lengthlist[$pointer];}
+      if ($i > 0 && $header <= $mylength){print OUT "$INrow\t"."$mychain\n";}
+      }
+close IN;
+sleep(1);
+close OUT;
+sleep(1);
+print "chain lengths added to DROIDSfluctuationAVGchain.txt file\n\n";
+
+#############################################
 
 system "perl GUI_STATS_DROIDSdp2.pl\n";	
 }

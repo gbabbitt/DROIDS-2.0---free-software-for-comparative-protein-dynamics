@@ -9,7 +9,7 @@ use File::Copy;
 use List::Util qw( min );
 use List::Util qw( max );
 use List::Util qw(min max);
-use Descriptive();
+use Statistics::Descriptive();
 
 
 # specify the path to working directory for Chimera here
@@ -157,28 +157,6 @@ my $gpuFrame = $mw->Frame(	-label => "HOW MANY EFFECTIVE GPU's IN SYSTEM?",
 						-variable=>\$gpuType
 						);
 
-# MD Type Frame
-my $mdFrame = $mw->Frame(	-label => "PRE-INSTALLED SOFTWARE FOR MD SIMULATION",
-				-relief => "groove",
-				-borderwidth => 2
-				);
-	my $md1Radio = $mdFrame->Radiobutton( -text => "AMBER 16 - licensed by Univ of CA",
-						-foreground => 'darkgreen',
-                        -value=>"amber16",
-						-variable=>\$mdType
-						);
-        my $md2Radio = $mdFrame->Radiobutton( -text => "AMBER 18 - licensed by Univ of CA",
-						-foreground => 'darkgreen',
-                        -value=>"amber18",
-						-variable=>\$mdType
-						);
-        my $md3Radio = $mdFrame->Radiobutton( -text => "OpenMM - open source MD sim library",
-						-foreground => 'darkgreen',
-                        -value=>"openMM",
-						-variable=>\$mdType
-						);
-
-		
 		
 # Buttons
 
@@ -215,12 +193,6 @@ $gpuFrame->pack(-side=>"top",
 $gpu1Radio->pack(-anchor=>"w");
 $gpu2Radio->pack(-anchor=>"w");
 
-$mdFrame->pack(-side=>"top",
-		-anchor=>"s");
-$md1Radio->pack(-anchor=>"w");
-$md2Radio->pack(-anchor=>"w");
-#$md3Radio->pack(-anchor=>"w");
-
 $pipeButton->pack(-side=>"top",
 			-anchor=>"s");
 $exitButton->pack(-side=>"top",
@@ -237,8 +209,8 @@ sub stop {exit;}
 ########################################################################################
 sub go {
 # make control file for DROIDS	
-print("launching DROIDS 2.0...\n");
-  if ($mdType eq "amber16"){
+print("\nlaunching DROIDS 2.0...\n");
+  
      if ($testType eq "ss" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSss.pl\n";}  
 	elsif ($testType eq "ss" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSss_dualGPU.pl\n";}
    elsif ($testType eq "sdm" && $gpuType eq "gpu1") {system "perl GUI_START_DROIDSsdm.pl\n";}  
@@ -257,51 +229,10 @@ print("launching DROIDS 2.0...\n");
         elsif ($testType eq "lp2" && $gpuType eq "gpu2") {system "perl GUI_START_DROIDSlp2_dualGPU.pl\n";}
         
         else {print " PLEASE SELECT OPTIONS\n"}
-        }
-  
-  if ($mdType eq "amber18"){  
-     if ($testType eq "ss" && $gpuType eq "gpu1") {print " AMBER 18 will be supported soon\n";}  
-	elsif ($testType eq "ss" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "sdm" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}  
-	elsif ($testType eq "sdm" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "ed" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "ed" && $gpuType eq "gpu2") {print"  AMBER 18 will be supported soon\n";}
-		elsif ($testType eq "dp1" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-        elsif ($testType eq "dp1" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-        elsif ($testType eq "dp2" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "dp3" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-        elsif ($testType eq "dp3" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-		  elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-        elsif ($testType eq "lp1" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
-	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {print "  AMBER 18 will be supported soon\n";}
-        elsif ($testType eq "lp2" && $gpuType eq "gpu2") {print "  AMBER 18 will be supported soon\n";}
         
-        else {print " PLEASE SELECT OPTIONS\n"}
-        }
   
-  if ($mdType eq "openMM"){  
-     if ($testType eq "ss" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}  
-	elsif ($testType eq "ss" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "sdm" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}  
-	elsif ($testType eq "sdm" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "ed" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "ed" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "ds1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "ds1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "dp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "dp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "dp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "dp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "dp3" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "dp3" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-		  elsif ($testType eq "lp1" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "lp1" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-	elsif ($testType eq "lp2" && $gpuType eq "gpu1") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        elsif ($testType eq "lp2" && $gpuType eq "gpu2") {print " THIS OPTION IS NOT YET AVAILABLE\n";}
-        
-        else {print " PLEASE SELECT OPTIONS\n"}
-        }
+  
+  
   
 }
 

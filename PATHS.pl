@@ -12,9 +12,17 @@ my $amber_path= '';
 my $teleap_path = '';
 my $openmm_path = '';
 
+
+sleep(1); print "\nlocating paths to amber, steam, chimera and chimerax\n";
+system ('locate /bin/pmemd | egrep home | grep cuda');
+system ('which steam');
+system ('locate /bin/ChimeraX | egrep ./ | grep bin');
+system ('locate /bin/chimera | egrep ./ | grep bin');
+
+
 #### Create GUI ####
 my $mw = MainWindow -> new; # Creates a new main window
-$mw -> title("PATHS TO SOFTWARE (can exit if this ctl file already exists)"); # Titles the main window
+$mw -> title("PATHS TO SOFTWARE (can exit if this ctl file is already correct)"); # Titles the main window
 $mw->setPalette("gray");
 
 
@@ -32,27 +40,33 @@ my $pathFrame = $mw->Frame();
 					-relief => "groove",
 					-textvariable=>\$chimera_path
 					);
+     my $chimeraxFrame = $pathFrame->Frame();
+		my $chimeraxLabel = $chimeraxFrame->Label(-text=>"path to ChimeraX executable (e.g. /home/greg/Desktop/chimerax-2019.01.19/bin/) : ");
+		my $chimeraxEntry = $chimeraxFrame->Entry(-borderwidth => 2,
+					-relief => "groove",
+					-textvariable=>\$chimerax_path
+					);   
 	my $teleapFrame = $pathFrame->Frame();
 		my $teleapLabel = $teleapFrame->Label(-text=>"path to force fields (e.g. /home/greg/Desktop/amber16/dat/leap/cmd/) : ");
 		my $teleapEntry = $teleapFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
 					-textvariable=>\$teleap_path
 					);	
-	my $openmmFrame = $pathFrame->Frame();
-		my $openmmLabel = $openmmFrame->Label(-text=>"path to OpenMM (e.g. NA ) : ");
-		my $openmmEntry = $openmmFrame->Entry(-borderwidth => 2,
+	my $steamFrame = $pathFrame->Frame();
+		my $steamLabel = $steamFrame->Label(-text=>"path to steam executable (e.g. /usr/bin/) : ");
+		my $steamEntry = $steamFrame->Entry(-borderwidth => 2,
 					-relief => "groove",
-					-textvariable=>\$openmm_path
+					-textvariable=>\$steam_path
 					);	
 		
 # Buttons
-my $controlButton = $mw -> Button(-text => "make PATHS control file (.ctl)", 
+my $controlButton = $mw -> Button(-text => "make new PATHS control file (paths.ctl)", 
 				-command => \&control,
 				-background => 'gray45',
                 -foreground => 'white'
 				); # Creates a ctl file button
 
-my $exitButton = $mw -> Button(-text => "exit after PATHS are specified", 
+my $exitButton = $mw -> Button(-text => "exit if PATHS are already correctly specified", 
 				-command => \&stop,
                 -background => 'gray45',
                 -foreground => 'white'
@@ -68,18 +82,22 @@ $amberLabel->pack(-side=>"left");
 $amberEntry->pack(-side=>"left");
 $chimeraLabel->pack(-side=>"left");
 $chimeraEntry->pack(-side=>"left");
+$chimeraxLabel->pack(-side=>"left");
+$chimeraxEntry->pack(-side=>"left");
 $teleapLabel->pack(-side=>"left");
 $teleapEntry->pack(-side=>"left");
-$openmmLabel->pack(-side=>"left");
-$openmmEntry->pack(-side=>"left");
+$steamLabel->pack(-side=>"left");
+$steamEntry->pack(-side=>"left");
 
 $amberFrame->pack(-side=>"top",
 		-anchor=>"e");
 $chimeraFrame->pack(-side=>"top",
 		-anchor=>"e");
+$chimeraxFrame->pack(-side=>"top",
+		-anchor=>"e");
 $teleapFrame->pack(-side=>"top",
 		-anchor=>"e");
-$openmmFrame->pack(-side=>"top",
+$steamFrame->pack(-side=>"top",
 		-anchor=>"e");
 $pathFrame->pack(-side=>"top",
 		-anchor=>"n");
@@ -100,7 +118,7 @@ print $ctlFile
 "amber_path\t$amber_path\t# path to amber home folder
 chimera_path\t$chimera_path\t# path to Chimera executable
 teleap_path\t$teleap_path\t# path to teLeap force field folder
-openmm_path\t$openmm_path\t# path to OpenMM executable";
+steam_path\t$steam_path\t# path to steam executable";
 close $ctlFile;
 
 print "control file for PATHS is done (see paths.ctl)\n";

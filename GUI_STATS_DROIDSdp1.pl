@@ -7,7 +7,7 @@ use File::Copy;
 use List::Util qw( min );
 use List::Util qw( max );
 use List::Util qw(min max);
-use Descriptive();
+use Statistics::Descriptive();
 
 
 # specify the path to working directory for Chimera here

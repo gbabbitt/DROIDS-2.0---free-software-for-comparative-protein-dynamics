@@ -19,6 +19,8 @@ for (my $i = 0; $i < scalar @IN; $i++){
 	 my $header = @INrow[0];
 	 my $path = @INrow[1];
 	 if ($header eq "chimera_path"){$chimera_path = $path;}
+      if ($header eq "chimerax_path"){$chimerax_path = $path;}
+      if ($header eq "steam_path"){$steam_path = $path;}
 }
 close IN;
 print "path to Chimera .exe\t"."$chimera_path\n";
@@ -219,6 +221,21 @@ my $playROLLbutton = $mw -> Button(-text => "play movies on ROLLING axes in DROI
                 -background => 'gray45',
                 -foreground => 'white'
 				); # Creates a final results display button
+my $playSTEREObutton = $mw -> Button(-text => "create/play 3D STEREO movie on ROLLING axis in DROIDS viewer", 
+				-command => \&playSTEREO,
+                -background => 'gray45',
+                -foreground => 'white'
+				); # Creates a final results display button
+my $playCHXbutton = $mw -> Button(-text => "explore with image lighting and VR system on ChimeraX", 
+				-command => \&playCHX,
+                -background => 'gray45',
+                -foreground => 'white'
+				); # Creates a final results display button
+my $seriesButton = $mw -> Button(-text => "create machine learning classifier on dynamics", 
+				-command => \&series,
+                -background => 'gray45',
+                -foreground => 'white'
+				); # Creates a time series button
 my $moviesButton = $mw -> Button(-text => "render movies in UCSF Chimera", 
 				-command => \&movies,
                 -background => 'gray45',
@@ -230,11 +247,6 @@ my $stopButton = $mw -> Button(-text => "exit DROIDS",
                 -background => 'gray45',
                 -foreground => 'white'
 				); # Creates a exit button
-my $seriesButton = $mw -> Button(-text => "create machine learning classifier on dynamics", 
-				-command => \&series,
-                -background => 'gray45',
-                -foreground => 'white'
-				); # Creates a time series button
 my $attrButton = $mw -> Button(-text => "make attribute file for Chimera", 
 				-command => \&attribute_file,
                 -background => 'gray45',
@@ -251,6 +263,18 @@ $stopButton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $seriesButton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$playCHXbutton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$playSTEREObutton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$playCHXbutton->pack(-side=>"bottom",
+			-anchor=>"s"
+			);
+$playSTEREObutton->pack(-side=>"bottom",
 			-anchor=>"s"
 			);
 $playXYZbutton->pack(-side=>"bottom",
@@ -481,7 +505,7 @@ sub playXYZ{
 print("Preparing movie display...\n");
 print("close DROIDS movie windows to exit\n\n");
 my @movies;
-my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2');
+my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2', 'S1L', 'S1R');
 for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 #for (my $i = 6; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 my $movieStr = join(" ", @movies);
@@ -492,11 +516,33 @@ sub playROLL{
 print("Preparing movie display...\n");
 print("close DROIDS movie windows to exit\n\n");
 my @movies;
-my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2');
+my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2', 'S1L', 'S1R');
 #for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 for (my $i = 6; $i < 8; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
 my $movieStr = join(" ", @movies);
 system("python DROIDS_gstreamer.py @movies");
+}
+#############################################################################################################
+sub playSTEREO{
+print("Preparing movie display...\n");
+system("ffmpeg -i Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_viewS1L_8.mp4 -i Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_viewS1R_9.mp4 -filter_complex hstack Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_viewSTEREO.mp4");
+print("close DROIDS movie windows to exit\n\n");
+my @movies;
+my @axes = ('Z1', 'Z2', 'X2', 'X1', 'Y1', 'Y2', 'R1', 'R2', 'S1L', 'S1R');
+#for (my $i = 0; $i < 6; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+for (my $i = 8; $i < 10; $i++) { $axis = $axes[$i]; $movies[$i] = "Videos/$refID"."_$queryID"."_$repStr"."_$attr"."_$testStr"."_view$axis"."_$i.mp4"; }
+my $movieStr = join(" ", @movies);
+system("python DROIDS_gstreamer.py @movies");
+}
+
+#############################################################################################################
+sub playCHX{
+print("Preparing ChimeraX display...\n");
+print("login and start steamVR\n");
+print("ChimeraX command line 'open pdb', 'vr on', 'vr off'\n");
+print("close ChimeraX and steam to exit\n\n");
+system("x-terminal-emulator -e $steam_path"."steam");
+system("$chimerax_path"."ChimeraX");
 }
 #############################################################################################################
 sub series {
@@ -505,9 +551,10 @@ sub series {
 if($solvation_method eq "implicit"){$TOPfile = "vac_1ubqREDUCED.prmtop";}
 if($solvation_method eq "explicit"){$TOPfile = "wat_1ubqREDUCED.prmtop";}
 # loop through .nc files on refID
+mkdir ("trainingData_$refID") or die "please delete training data folder from previous run\n";
 for(my $j = 0; $j<$number_runs; $j++){
 $TRAJfile = "prod_$refID"."REDUCED_$j.nc";
-$OUTfile = "fluxtime_$refID"."_$j.txt";
+$OUTfile = "./trainingData_$refID/fluxtime_$refID"."_$j.txt";
 $step = 5;
 $steplimit = $frameCount;
 $start = 0;
@@ -531,9 +578,10 @@ print CPPTRAJ "quit\n";
 close CPPTRAJ;
 }
 # loop through .nc files on queryID
+mkdir ("trainingData_$queryID") or die "please delete training data folder from previous run\n";
 for(my $j = 0; $j<$number_runs; $j++){
 $TRAJfile = "prod_$queryID"."REDUCED_$j.nc";
-$OUTfile = "fluxtime_$queryID"."_$j.txt";
+$OUTfile = "./trainingData_$queryID/fluxtime_$queryID"."_$j.txt";
 $step = 5;
 $steplimit = $frameCount;
 $start = 0;
@@ -556,7 +604,8 @@ $stop = $stop + $step;
 print CPPTRAJ "quit\n";
 close CPPTRAJ;
 }
+
 sleep(1); print("time series files created\n\n"); sleep(1);    
-     
+system "perl GUI_ML_DROIDS.pl\n";     
 }
 ###########################################################################################################

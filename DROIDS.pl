@@ -98,7 +98,7 @@ $mw->setPalette("gray");
 my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARISON",
 				-relief => "groove",
 				-borderwidth => 2
-				);
+                );
         
    my $ssRadio = $pipeFrame->Radiobutton( -text => "(1) analyze stability (self-similarity) of dynamics on a single protein or protein complex									            (requires 1 PDB ID)",
 						-foreground => 'navy',
@@ -145,13 +145,13 @@ my $pipeFrame = $mw->Frame(	-label => "CHOOSE MODE OF MOLECULAR DYNAMIC COMPARIS
 my $gpuFrame = $mw->Frame(	-label => "HOW MANY EFFECTIVE GPU's IN SYSTEM?",
 				-relief => "groove",
 				-borderwidth => 2
-				);
-	my $gpu1Radio = $gpuFrame->Radiobutton( -text => "single GPU system - run MD sequentially (single GPU)                           NOTE: can only run single chain protein",
+                );
+	my $gpu1Radio = $gpuFrame->Radiobutton( -text => "single GPU system - run MD sequentially (single GPU or multi GPU with SLI)",
 						-foreground => 'darkred',
                         -value=>"gpu1",
 						-variable=>\$gpuType
 						);
-        my $gpu2Radio = $gpuFrame->Radiobutton( -text => "double GPU system - run query/ref MD simultaneously (i.e. no SLI)    NOTE: can also analyze multi-chain proteins ",
+        my $gpu2Radio = $gpuFrame->Radiobutton( -text => "double GPU system - run query/ref MD simultaneously (i.e. no SLI)",
 						-foreground => 'darkred',
                         -value=>"gpu2",
 						-variable=>\$gpuType

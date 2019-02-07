@@ -278,5 +278,41 @@ rc("movie encode %s.mp4 wait true" % (out_file))
 rc("wait")
 rc("scale 0.7")
 
+##############################################
+# set position and initial scale for movie R1 left eye
+rc("stereo left eye")
+rc("scale 0.2")
+#rc("turn x 90")
+# Record movie 9
+i = 8
+out_file = "%s/%s_%s_%s_%s_%s_viewS1L_%i" % (out_folder, rID, qID, rep, attr, metric, i)
+rc("movie record")
+rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
+rc("wait %s" % (frame_count))
+rc("movie stop")
+rc("movie status")
+rc("movie encode %s.mp4 wait true" % (out_file))
+rc("wait")
+rc("scale 0.7")
+
+##############################################
+# set position and initial scale for movie R1 right eye
+rc("stereo right eye")
+rc("scale 0.2")
+#rc("turn x 90")
+# Record movie 10
+i = 9
+out_file = "%s/%s_%s_%s_%s_%s_viewS1R_%i" % (out_folder, rID, qID, rep, attr, metric, i)
+rc("movie record")
+rc("coordset #%s 1, holdSteady #%s:%s@CA load true" %(model, model, central_residue))
+rc("scale 1.02 100")
+rc("wait %s" % (frame_count))
+rc("movie stop")
+rc("movie status")
+rc("movie encode %s.mp4 wait true" % (out_file))
+rc("wait")
+rc("scale 0.7")
+
 ###############################################
 rc("stop")

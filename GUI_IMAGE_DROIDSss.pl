@@ -544,9 +544,10 @@ sub series {
 if($solvation_method eq "implicit"){$TOPfile = "vac_1ubqREDUCED.prmtop";}
 if($solvation_method eq "explicit"){$TOPfile = "wat_1ubqREDUCED.prmtop";}
 # loop through .nc files on refID
+mkdir ("trainingData_$refID") or die "please delete training data folder from previous run\n";
 for(my $j = 0; $j<$number_runs; $j++){
 $TRAJfile = "prod_$refID"."REDUCED_$j.nc";
-$OUTfile = "fluxtime_$refID"."_$j.txt";
+$OUTfile = "./trainingData_$refID/fluxtime_$refID"."_$j.txt";
 $step = 5;
 $steplimit = $frameCount;
 $start = 0;
@@ -570,9 +571,10 @@ print CPPTRAJ "quit\n";
 close CPPTRAJ;
 }
 # loop through .nc files on queryID
+mkdir ("trainingData_$queryID") or die "please delete training data folder from previous run\n";
 for(my $j = 0; $j<$number_runs; $j++){
 $TRAJfile = "prod_$queryID"."REDUCED_$j.nc";
-$OUTfile = "fluxtime_$queryID"."_$j.txt";
+$OUTfile = "./trainingData_$queryID/fluxtime_$queryID"."_$j.txt";
 $step = 5;
 $steplimit = $frameCount;
 $start = 0;
